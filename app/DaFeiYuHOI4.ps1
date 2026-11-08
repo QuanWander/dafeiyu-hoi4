@@ -6,7 +6,7 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.0'
+$script:appVersion = '0.9.1'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -1745,7 +1745,6 @@ function Show-ActionPicker {
         $idsByGroup[$group] += $id
     }
     foreach ($group in $groups) { [void]$category.Items.Add($group) }
-    $state = @{ ids = @() }
 
     $desc = New-Object System.Windows.Forms.Label
     $desc.Text = ''
@@ -1867,9 +1866,10 @@ function Show-ActionPicker {
     $dialog.CancelButton = $cancel
 
     $updateDetail = {
+        $ids = @($combo.Tag)
         $index = $combo.SelectedIndex
-        if ($index -lt 0 -or $index -ge $state.ids.Count) { return }
-        $id = $state.ids[$index]
+        if ($index -lt 0 -or $index -ge $ids.Count) { return }
+        $id = $ids[$index]
         $def = $script:actionDefs[$id]
         $desc.Text = $def.Desc
         $risk.Text = if ($def.Risk -eq 'extreme') { '极高风险：会永久改变存档，建议先备份' } elseif ($def.Risk -eq 'high') { '高风险：会直接改变外交/战争状态' } elseif ($def.Risk -eq 'medium') { '中风险：会明显增强 AI' } else { '低风险：常规支援' }
@@ -1913,12 +1913,13 @@ function Show-ActionPicker {
 
     $updateActions = {
         $group = [string]$category.SelectedItem
-        $state.ids = @($idsByGroup[$group])
+        $ids = @($idsByGroup[$group])
+        $combo.Tag = $ids
         $combo.BeginUpdate()
         $combo.Items.Clear()
-        foreach ($id in $state.ids) { [void]$combo.Items.Add($script:actionDefs[$id].Name) }
+        foreach ($id in $ids) { [void]$combo.Items.Add($script:actionDefs[$id].Name) }
         $combo.EndUpdate()
-        if ($state.ids.Count -gt 0) { $combo.SelectedIndex = 0 }
+        if ($ids.Count -gt 0) { $combo.SelectedIndex = 0 }
         & $updateDetail
     }
 
@@ -1931,9 +1932,10 @@ function Show-ActionPicker {
     & $updateActions
 
     $go.Add_Click({
+        $ids = @($combo.Tag)
         $index = $combo.SelectedIndex
-        if ($index -lt 0 -or $index -ge $state.ids.Count) { return }
-        $id = $state.ids[$index]
+        if ($index -lt 0 -or $index -ge $ids.Count) { return }
+        $id = $ids[$index]
         $def = $script:actionDefs[$id]
         $tb = Get-ActionTextControl $dialog
         $targetTag = ''
