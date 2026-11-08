@@ -1,6 +1,7 @@
 ﻿$ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $AppSource = Join-Path $Root 'app\DaFeiYuHOI4.ps1'
+$ActionsSource = Join-Path $Root 'app\actions.ps1'
 $AssetSource = Join-Path $Root 'app\assets'
 $ModSource = Join-Path $Root 'mod\dafeiyu_hoi4'
 $ModDescriptor = Join-Path $Root 'mod\dafeiyu_hoi4.mod'
@@ -16,6 +17,7 @@ $Desktop = [Environment]::GetFolderPath('Desktop')
 $KeyFile = Join-Path $Target 'key.dat'
 
 if (-not (Test-Path -LiteralPath $AppSource)) { throw "安装包不完整：找不到 $AppSource" }
+if (-not (Test-Path -LiteralPath $ActionsSource)) { throw "安装包不完整：找不到 $ActionsSource" }
 if (-not (Test-Path -LiteralPath $ModSource)) { throw "安装包不完整：找不到 $ModSource" }
 
 Write-Host ''
@@ -39,6 +41,7 @@ New-Item -ItemType Directory -Force -Path $Target | Out-Null
 New-Item -ItemType Directory -Force -Path $ModRoot | Out-Null
 
 Copy-Item -LiteralPath $AppSource -Destination (Join-Path $Target 'DaFeiYuHOI4.ps1') -Force
+Copy-Item -LiteralPath $ActionsSource -Destination (Join-Path $Target 'actions.ps1') -Force
 if (Test-Path -LiteralPath $AssetSource) {
     $TargetAssets = Join-Path $Target 'assets'
     if (Test-Path -LiteralPath $TargetAssets) { Remove-Item -LiteralPath $TargetAssets -Recurse -Force }
