@@ -6,7 +6,7 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.1'
+$script:appVersion = '0.9.2'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -69,6 +69,9 @@ $script:helpSections = [ordered]@{
 eval_effect ENG = { add_to_faction = GER }
 
 粘贴后按回车，再按一次 ~ 关闭控制台。
+
+聊天框输入 /下令 也可以直接打开“给 AI 下令”面板；
+普通聊天不受影响。
 "@
     '行动与验证' = @"
 ## 行动与验证
@@ -2230,6 +2233,11 @@ function Send-Chat {
     }
     $message = $inputBox.Text.Trim()
     if (-not $message) { return }
+    if ($message -match '^/(下令|order|action)(\s|$)') {
+        $inputBox.Clear()
+        Show-ActionPicker
+        return
+    }
     $messageTime = (Get-Date).ToString('HH:mm')
     if ((Get-Memory $tag).Count -eq 0) { $chatPanel.Controls.Clear() }
 
@@ -2640,7 +2648,7 @@ $inputBox.Font = New-Object Drawing.Font('Microsoft YaHei UI', 10)
 $inputCard.Controls.Add($inputBox)
 
 $inputHint = New-Object System.Windows.Forms.Label
-$inputHint.Text = '写下一句话，寄给这个国家…'
+$inputHint.Text = '写下一句话… 或输入 /下令 打开指令面板'
 $inputHint.ForeColor = $UiMuted
 $inputHint.BackColor = $UiCard
 $inputHint.Location = New-Object Drawing.Point(16, 16)
