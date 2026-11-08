@@ -49,12 +49,8 @@ $script:actionDefs = [ordered]@{
     'create_faction' = @{
         Name = '让 AI 创建阵营'
         Category = '阵营 · 高风险'
-        Desc = '让 AI 创建一个新阵营。需要填阵营名称；AI 必须是独立国家。'
-        Command = 'effect {0} create_faction = "{4}"'
-        NeedsText = $true
-        TextLabel = '阵营名称'
-        TextPlaceholder = '例如 Rome Pact'
-        TextPattern = '^[^"]{1,40}$'
+        Desc = '让 AI 创建一个默认名为“大肥鱼阵营”的阵营。HOI4 这里需要本地化 key，不是中文名。'
+        Command = 'effect {0} create_faction = DFY_NEW_FACTION'
         Risk = 'high'
         AiSuggest = $false
         Verify = ''
@@ -62,12 +58,8 @@ $script:actionDefs = [ordered]@{
     'rename_faction' = @{
         Name = '重命名 AI 阵营'
         Category = '阵营 · 高级'
-        Desc = '给 AI 所在阵营改名字。需要填新名称；AI 必须是阵营领袖。'
-        Command = 'effect {0} set_faction_name = "{4}"'
-        NeedsText = $true
-        TextLabel = '新阵营名'
-        TextPlaceholder = '例如 New Axis'
-        TextPattern = '^[^"]{1,40}$'
+        Desc = '把 AI 所在阵营改名为“大肥鱼阵营”。HOI4 这里需要本地化 key，不是中文名。'
+        Command = 'effect {0} set_faction_name = DFY_NEW_FACTION'
         Risk = 'medium'
         AiSuggest = $false
         Verify = ''
