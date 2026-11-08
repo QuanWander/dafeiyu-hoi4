@@ -2,7 +2,7 @@
 
 让《钢铁雄心 4》里的 AI 国家真正“会说话”：你玩一个国家，DeepSeek 扮演另一个国家；它读取自己的工厂、师、船、飞机、战争和阵营状态，记住你说过的话，和你谈判、拒绝、提条件。
 
-**公开 Beta：v0.9.15**
+**公开 Beta：v0.9.20**
 
 > 这是独立项目，不依赖 NationMind。自己的配套 mod（`DFY|` 日志协议）+ 自己的外部 Windows 软件。
 >
@@ -174,8 +174,8 @@ dafeiyu-hoi4/
 
 ## 发布
 
-- GitHub Release：https://github.com/QuanWander/dafeiyu-hoi4/releases/tag/v0.9.15
-- 资产：`DaFeiYuHOI4-v0.9.15.zip`、`SHA256SUMS.txt`
+- GitHub Release：https://github.com/QuanWander/dafeiyu-hoi4/releases/tag/v0.9.20
+- 资产：`DaFeiYuHOI4-v0.9.20.zip`、`SHA256SUMS.txt`
 - 发布说明：[RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ## License

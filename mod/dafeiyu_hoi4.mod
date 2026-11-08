@@ -1,4 +1,4 @@
-version="0.9.15"
+version="0.9.20"
 tags={
 	"Gameplay"
 	"Utilities"
@@ -6,6 +6,11 @@ tags={
 name="DaFeiYu HOI4"
 supported_version="1.19.*"
 path="mod/dafeiyu_hoi4"
+
+
+
+
+
 
 
 
