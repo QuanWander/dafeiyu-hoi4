@@ -1,0 +1,133 @@
+dfy_log_state = {
+	set_temp_variable = { dfy_civ = num_of_civilian_factories }
+	set_temp_variable = { dfy_mil = num_of_military_factories }
+	set_temp_variable = { dfy_dock = num_of_naval_factories }
+	set_temp_variable = { dfy_div = num_divisions }
+	set_temp_variable = { dfy_manpower = manpower_k }
+	set_temp_variable = { dfy_ships = num_ships }
+	set_temp_variable = { dfy_planes = num_deployed_planes }
+	set_temp_variable = { dfy_res = amount_research_slots }
+	set_temp_variable = { dfy_pp = political_power }
+	set_temp_variable = { dfy_stab = stability }
+	set_temp_variable = { dfy_ws = war_support }
+	if = {
+		limit = { is_in_faction = yes }
+		set_temp_variable = { dfy_faction = 1 }
+	}
+	else = {
+		set_temp_variable = { dfy_faction = 0 }
+	}
+	set_temp_variable = { dfy_enemies = 0 }
+	if = {
+		limit = { has_war = yes }
+		set_temp_variable = { dfy_war = 1 }
+	}
+	else = {
+		set_temp_variable = { dfy_war = 0 }
+	}
+	log = "DFY|state|tag=[THIS.GetTag]|country=[THIS.GetName]|civ=[?dfy_civ]|mil=[?dfy_mil]|dock=[?dfy_dock]|div=[?dfy_div]|manpower_k=[?dfy_manpower]|ships=[?dfy_ships]|planes=[?dfy_planes]|war=[?dfy_war]|res=[?dfy_res]|faction=[?dfy_faction]|pp=[?dfy_pp]|stab=[?dfy_stab]|ws=[?dfy_ws]"
+}
+
+dfy_log_relations = {
+	if = {
+		limit = { is_faction_leader = yes }
+		log = "DFY|faction_leader|tag=[THIS.GetTag]"
+	}
+	every_country = {
+		if = {
+			limit = { is_in_faction_with = ROOT }
+			log = "DFY|faction|tag=[ROOT.GetTag]|member=[THIS.GetTag]"
+		}
+	}
+	every_country = {
+		if = {
+			limit = { has_guaranteed = ROOT }
+			log = "DFY|guarantee|tag=[ROOT.GetTag]|target=[THIS.GetTag]"
+		}
+	}
+	every_country = {
+		if = {
+			limit = { is_guaranteed_by = ROOT }
+			log = "DFY|guaranteed_by|tag=[ROOT.GetTag]|by=[THIS.GetTag]"
+		}
+	}
+	every_country = {
+		if = {
+			limit = { has_war_with = ROOT }
+			log = "DFY|enemy|tag=[ROOT.GetTag]|enemy=[THIS.GetTag]"
+		}
+	}
+}
+
+dfy_action_test = {
+	log = "DFY|action|test|tag=[THIS.GetTag]"
+}
+
+dfy_action_invest_civ = {
+	random_owned_controlled_state = {
+		limit = {
+			free_building_slots = {
+				building = industrial_complex
+				size > 0
+			}
+		}
+		add_building_construction = {
+			type = industrial_complex
+			level = 1
+			instant_build = yes
+		}
+	}
+	log = "DFY|action|invest_civ|tag=[THIS.GetTag]"
+}
+
+dfy_action_invest_mil = {
+	random_owned_controlled_state = {
+		limit = {
+			free_building_slots = {
+				building = arms_factory
+				size > 0
+			}
+		}
+		add_building_construction = {
+			type = arms_factory
+			level = 1
+			instant_build = yes
+		}
+	}
+	log = "DFY|action|invest_mil|tag=[THIS.GetTag]"
+}
+
+
+dfy_action_invest_dock = {
+	random_owned_controlled_state = {
+		limit = {
+			free_building_slots = {
+				building = dockyard
+				size > 0
+			}
+		}
+		add_building_construction = {
+			type = dockyard
+			level = 1
+			instant_build = yes
+		}
+	}
+	log = "DFY|action|invest_dock|tag=[THIS.GetTag]"
+}
+
+dfy_action_invest_infra = {
+	random_owned_controlled_state = {
+		limit = {
+			free_building_slots = {
+				building = infrastructure
+				size > 0
+			}
+		}
+		add_building_construction = {
+			type = infrastructure
+			level = 1
+			instant_build = yes
+		}
+	}
+	log = "DFY|action|invest_infra|tag=[THIS.GetTag]"
+}
