@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.15'
+$script:appVersion = '0.9.16'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -2722,19 +2722,19 @@ $eyebrow = New-Object System.Windows.Forms.Label
 $eyebrow.Text = 'WHALE  &  IRON'
 $eyebrow.Font = New-Object Drawing.Font('Segoe UI', 7, [Drawing.FontStyle]::Bold)
 $eyebrow.ForeColor = [Drawing.Color]::FromArgb(255, 158, 208)
-$eyebrow.Location = New-Object Drawing.Point(96, 12)
-$eyebrow.Size = New-Object Drawing.Size(190, 16)
+$eyebrow.Location = New-Object Drawing.Point(94, 12)
+$eyebrow.Size = New-Object Drawing.Size(204, 16)
 $sidebar.Controls.Add($eyebrow)
 
 $title = New-Object System.Windows.Forms.Panel
-$title.Location = New-Object Drawing.Point(94, 28)
-$title.Size = New-Object Drawing.Size(200, 34)
+$title.Location = New-Object Drawing.Point(92, 28)
+$title.Size = New-Object Drawing.Size(206, 34)
 $title.BackColor = [Drawing.Color]::Transparent
 $title.Add_Paint({
     param($s, $e)
     $rect = New-Object Drawing.RectangleF(0, 0, $s.Width, $s.Height)
     $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush($rect, [Drawing.Color]::FromArgb(255, 158, 208), [Drawing.Color]::FromArgb(143, 212, 255), 0)
-    $font = New-Object Drawing.Font('Microsoft YaHei UI', 17, [Drawing.FontStyle]::Bold)
+    $font = New-Object Drawing.Font('Microsoft YaHei UI', 16, [Drawing.FontStyle]::Bold)
     $format = New-Object Drawing.StringFormat
     $format.LineAlignment = 'Center'
     $e.Graphics.DrawString('大肥鱼 HOI4', $font, $brush, $rect, $format)
@@ -2743,10 +2743,10 @@ $title.Add_Paint({
 $sidebar.Controls.Add($title)
 
 $subtitle = New-Object System.Windows.Forms.Label
-$subtitle.Text = '在钢铁与海浪之间，听一个国家说话'
+$subtitle.Text = '钢铁与海浪之间，听一个国家'
 $subtitle.ForeColor = $UiMuted
-$subtitle.Location = New-Object Drawing.Point(96, 58)
-$subtitle.Size = New-Object Drawing.Size(198, 18)
+$subtitle.Location = New-Object Drawing.Point(94, 58)
+$subtitle.Size = New-Object Drawing.Size(204, 18)
 $sidebar.Controls.Add($subtitle)
 
 $accent = New-Object System.Windows.Forms.Panel
