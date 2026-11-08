@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.9.3 — 2026-11-08
+
+- 修复“启动游戏”直接运行 hoi4.exe 导致 Steam/DLC 不加载：改为 `steam.exe -applaunch 394360 -debug_mode`。
+- 这就是 `Active DLC Count: 0`、兵牌/模型退回简化版的根因；通过 Steam 启动后 DLC 才会被授权。
+- 如果找不到 Steam，才回退直接启动，并提示 DLC 可能不加载。
+- 还原了之前临时改的 `template_counter`，不再动玩家设置。
+
 ## v0.9.2 — 2026-11-08
 
 - 聊天框支持 `/下令`、`/order`、`/action`：直接打开“给 AI 下令”面板，不发送给 AI。

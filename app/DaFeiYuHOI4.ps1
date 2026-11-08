@@ -6,7 +6,7 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.2'
+$script:appVersion = '0.9.3'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -2681,8 +2681,16 @@ $btnGame.Add_Click({
     if (Get-Process hoi4 -ErrorAction SilentlyContinue) {
         [Windows.Forms.MessageBox]::Show('HOI4 已经在运行。', '提示')
     } else {
-        Start-Process -FilePath $exe -ArgumentList '-debug_mode' -WorkingDirectory (Split-Path $exe)
-        $lblStatus.Text = '已启动游戏，进地图后等一周。'
+        $steam = $null
+        try { $steam = (Get-ItemProperty 'HKCU:\Software\Valve\Steam' -ErrorAction Stop).SteamExe } catch {}
+        if (-not $steam) { $steam = 'C:\Program Files (x86)\Steam\steam.exe' }
+        if (Test-Path -LiteralPath $steam) {
+            Start-Process -FilePath $steam -ArgumentList '-applaunch 394360 -debug_mode'
+            $lblStatus.Text = '已通过 Steam 启动（DLC/创意工坊正常）。'
+        } else {
+            Start-Process -FilePath $exe -ArgumentList '-debug_mode' -WorkingDirectory (Split-Path $exe)
+            $lblStatus.Text = '已直接启动游戏；DLC 可能不加载，建议从 Steam 启动。'
+        }
     }
 })
 
