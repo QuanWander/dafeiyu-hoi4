@@ -101,6 +101,21 @@ eval_effect GER = { add_to_faction = ENG }
 
 所以：**50 条命令都能解析执行，但不是 50 条都 100% 效果验证。** 公开 Beta 的意义就是让真实存档把隐藏问题跑出来。
 
+## 同国参谋（Beta）
+
+主界面右上角有 **“同国参谋”** 开关。
+
+开启后：
+
+- 不再选择 AI 国家，状态卡切到玩家国；
+- 大肥鱼以玩家国总参谋身份说话；
+- 快捷问法变成“下一步国策 / 内政优先级 / 战争风险”；
+- 只给建议，不输出 `[ACTION]`，不生成控制台命令；
+- 行动按钮禁用，避免误把玩家国当 AI 国。
+
+这是 **A 方案：同国参谋**，不是同国代管。  
+当前只能看每周国力快照，**看不到生产队列、建造队列、师编制、部队位置、焦点树进度**；她需要时会问你。
+
 ## 当前限制
 
 - 行动是**半自动**：命令由软件生成并复制，最后粘贴要你手动；
@@ -145,8 +160,8 @@ dafeiyu-hoi4/
 
 ## 发布
 
-- 发布包：`dist/DaFeiYuHOI4-v0.9.12.zip`
-- 校验和：`dist/SHA256SUMS.txt`
+- GitHub Release：https://github.com/QuanWander/dafeiyu-hoi4/releases/tag/v0.9.12
+- 资产：`DaFeiYuHOI4-v0.9.12.zip`、`SHA256SUMS.txt`
 - 发布说明：[RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ## License

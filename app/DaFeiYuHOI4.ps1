@@ -6,7 +6,7 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.12'
+$script:appVersion = '0.9.13'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -698,6 +698,10 @@ function New-FlatButton([string]$text, [int]$x, [int]$y, [int]$w, [int]$h, [Draw
 }
 
 function Get-SelectedTag {
+    if ($script:advisorMode) {
+        if ($script:player -and $script:states.ContainsKey($script:player)) { return $script:player }
+        return ''
+    }
     $raw = [string]$comboAI.SelectedItem
     if ($raw -match '^([A-Z0-9]{3})') { return $Matches[1] }
     return ''
@@ -807,6 +811,8 @@ function Add-Bubble([string]$speaker, [string]$message, [bool]$isUser, [string]$
 
 function Add-Welcome {
     if (-not $chatPanel) { return }
+    if (-not $script:quickButtons) { $script:quickButtons = New-Object System.Collections.ArrayList }
+    $advisor = [bool]$script:advisorMode
     $row = New-Object System.Windows.Forms.Panel
     $row.Width = [Math]::Max(400, $chatPanel.ClientSize.Width - 30)
     $row.Height = 212
@@ -854,7 +860,7 @@ function Add-Welcome {
     $card.Controls.Add($eyebrow)
 
     $heading = New-Object System.Windows.Forms.Label
-    $heading.Text = '和 AI 国家谈一局'
+    $heading.Text = if ($advisor) { '让大肥鱼当你的参谋' } else { '和 AI 国家谈一局' }
     $heading.Font = New-Object Drawing.Font('Microsoft YaHei UI', 16, [Drawing.FontStyle]::Bold)
     $heading.ForeColor = $UiText
     $heading.Location = New-Object Drawing.Point(94, 36)
@@ -862,11 +868,13 @@ function Add-Welcome {
     $card.Controls.Add($heading)
 
     $hint = New-Object System.Windows.Forms.Label
-    $hint.Text = '它会看自己的工厂、师、船和战争状态，也会记住你答应过什么。'
+    $hint.Text = if ($advisor) { '她看你的国家，给国策、内政、编制和战争建议。' } else { '它会看自己的工厂、师、船和战争状态，也会记住你答应过什么。' }
     $hint.ForeColor = $UiMuted
     $hint.Location = New-Object Drawing.Point(96, 68)
     $hint.Size = New-Object Drawing.Size(460, 22)
     $card.Controls.Add($hint)
+    $script:welcomeHeading = $heading
+    $script:welcomeHint = $hint
 
     $spark = New-Object System.Windows.Forms.Label
     $spark.Text = '✦'
@@ -877,15 +885,25 @@ function Add-Welcome {
     $spark.Size = New-Object Drawing.Size(40, 34)
     $card.Controls.Add($spark)
 
-    $prompts = @(
-        @{ text = '分析局势'; say = '帮我分析一下当前局势，我接下来该怎么走？' },
-        @{ text = '谈结盟'; say = '我们结盟怎么样？你想要什么条件？' },
-        @{ text = '施压'; say = '如果你不答应，我会考虑用武力解决。' }
-    )
+    $prompts = if ($advisor) {
+        @(
+            @{ text = '下一步国策'; say = '我接下来该走什么国策？请给优先级、理由和风险。' },
+            @{ text = '内政优先级'; say = '我现在建造、科研、生产、编制应该怎么排优先级？' },
+            @{ text = '战争风险'; say = '我当前的战争风险和外交方向怎么样？' }
+        )
+    } else {
+        @(
+            @{ text = '分析局势'; say = '帮我分析一下当前局势，我接下来该怎么走？' },
+            @{ text = '谈结盟'; say = '我们结盟怎么样？你想要什么条件？' },
+            @{ text = '施压'; say = '如果你不答应，我会考虑用武力解决。' }
+        )
+    }
+    $script:quickButtons.Clear()
     $x = 22
     foreach ($item in $prompts) {
         $btn = New-FlatButton $item.text $x 118 120 34 ([Drawing.Color]::FromArgb(56, 43, 88))
         $btn.Tag = $item.say
+        [void]$script:quickButtons.Add($btn)
         $btn.Add_Click({
             param($s, $e)
             $inputBox.Text = [string]$s.Tag
@@ -1017,8 +1035,8 @@ function Update-StateCard {
         $lblNavy.Text = '舰船 —   飞机 —'
         $lblPolitics.Text = '政治 —   稳定 —   战争支持 —'
         $lblDiplomacy.Text = '科研槽 —   阵营 —'
-        $lblChatTitle.Text = 'AI 国家'
-        $lblChatSub.Text = '一个国家的耳语'
+        $lblChatTitle.Text = if ($script:advisorMode) { '同国参谋' } else { 'AI 国家' }
+        $lblChatSub.Text = if ($script:advisorMode) { '大肥鱼看你的国家，给建议' } else { '一个国家的耳语' }
         return
     }
     $s = $script:states[$tag]
@@ -1036,8 +1054,8 @@ function Update-StateCard {
     $factionText = if ($s.faction -eq '1') { '有' } else { '无' }
     $rel = Get-Relations $tag
     $lblDiplomacy.Text = "科研槽 $($s.res)   阵营 $factionText   敌国 $($rel.enemies)"
-    $lblChatTitle.Text = "$($s.country)  ·  $tag"
-    $lblChatSub.Text = "一个国家的耳语 · $warText · 档案已同步"
+    $lblChatTitle.Text = if ($script:advisorMode) { '同国参谋 · ' + $s.country } else { "$($s.country)  ·  $tag" }
+    $lblChatSub.Text = if ($script:advisorMode) { '大肥鱼看你的国家，给建议 · ' + $warText } else { "一个国家的耳语 · $warText · 档案已同步" }
     $lblFlag.Text = $tag
     $lblFlag.Visible = $true
     $flag.BackColor = [Drawing.Color]::FromArgb(74, 53, 107)
@@ -1057,7 +1075,14 @@ function Update-Controls {
             $playerChanged = $true
         }
     }
-    $tags = @($script:states.Keys | Where-Object { $_ -ne $script:player } | Sort-Object)
+    if ($script:advisorMode) {
+        $tags = if ($script:states.ContainsKey($script:player)) { @($script:player) } else { @() }
+    } else {
+        $tags = @($script:states.Keys | Where-Object { $_ -ne $script:player } | Sort-Object)
+    }
+    $comboAI.Enabled = -not $script:advisorMode
+    $lblAI.Text = if ($script:advisorMode) { '同国参谋' } else { 'AI 国家' }
+    $btnActions.Enabled = -not $script:advisorMode
     $items = @($comboAI.Items | ForEach-Object { ([string]$_).Substring(0, 3) })
     if (($tags -join ',') -ne ($items -join ',')) {
         $current = Get-SelectedTag
@@ -2279,7 +2304,11 @@ function Send-Chat {
     if (-not $message) { return }
     if ($message -match '^/(下令|order|action)(\s|$)') {
         $inputBox.Clear()
-        Show-ActionPicker
+        if ($script:advisorMode) {
+            Add-SystemBubble '同国参谋模式只给建议，不生成控制台命令。需要命令时先切回“AI 国家”。' $UiMuted
+        } else {
+            Show-ActionPicker
+        }
         return
     }
     $messageTime = (Get-Date).ToString('HH:mm')
@@ -2299,14 +2328,37 @@ function Send-Chat {
         }
     }
     $ledgerText = if ($ledgerLines.Count -gt 0) { $ledgerLines -join "`n" } else { '暂无' }
-    $aiActionLines = @()
-    foreach ($id in $script:actionDefs.Keys) {
-        if ($script:actionDefs[$id].AiSuggest) {
-            $aiActionLines += "[ACTION:$id] $($script:actionDefs[$id].Name)"
+    $aiActionText = ''
+    if (-not $script:advisorMode) {
+        $aiActionLines = @()
+        foreach ($id in $script:actionDefs.Keys) {
+            if ($script:actionDefs[$id].AiSuggest) {
+                $aiActionLines += "[ACTION:$id] $($script:actionDefs[$id].Name)"
+            }
         }
+        $aiActionText = $aiActionLines -join "`n"
     }
-    $aiActionText = $aiActionLines -join "`n"
-    $system = @"
+    if ($script:advisorMode) {
+        $system = @"
+你是《钢铁雄心4》玩家国家 $($state.country)（$tag）的总参谋/国务顾问，不是敌国，也不是另一个玩家。玩家就是 $($script:player)，本局是「$($script:campaignTitle)」。
+
+已知国力快照：民用工厂 $($state.civ)，军工 $($state.mil)，船坞 $($state.dock)，师 $($state.div)，人力 $($state.manpower_k)K，舰船 $($state.ships)，飞机 $($state.planes)，$war。
+政治点 $($state.pp)，稳定度 $stabPct%，战争支持度 $wsPct%，科研槽 $($state.res)，阵营 $(if ($state.faction -eq '1') { '有' } else { '无' })。
+本局摘要：$summary
+已知承诺：
+$ledgerText
+
+要求：
+- 用中文，以玩家国参谋身份说话，给建议而不是替玩家做决定；
+- 只根据已知快照和玩家提供的信息判断，不要编造生产队列、编制、部队位置等没有的数据；
+- 信息不足时明确问玩家；
+- 优先给 2-4 条可执行的优先级：国策、建造、科研、生产/编制、外交或战争风险；
+- 每条说明理由、代价和风险；
+- 不要输出 [ACTION] 标记，不要生成控制台命令，除非玩家明确要求“给我命令”；
+- 回答控制在 400 字以内。
+"@
+    } else {
+        $system = @"
 你是《钢铁雄心4》中由 AI 扮演的 $($state.country)（$tag）决策者。玩家扮演 $($script:player)，本局是「$($script:campaignTitle)」。
 当前国力：民用工厂 $($state.civ)，军工 $($state.mil)，船坞 $($state.dock)，师 $($state.div)，人力 $($state.manpower_k)K，舰船 $($state.ships)，飞机 $($state.planes)，$war。
 政治点 $($state.pp)，稳定度 $stabPct%，战争支持度 $wsPct%，科研槽 $($state.res)，阵营 $(if ($state.faction -eq '1') { '有' } else { '无' })。
@@ -2318,6 +2370,7 @@ $ledgerText
 如果你明确同意一个具体行动，在回复最后单独一行输出一个标记；只能选一个，不真心同意就不要输出：
 $aiActionText
 "@
+    }
     $history = @(Get-Memory $tag)
     $messages = New-Object System.Collections.ArrayList
     [void]$messages.Add(@{ role = 'system'; content = $system })
@@ -2341,11 +2394,12 @@ $aiActionText
         $actionId = $null
         $aiActionPattern = '\[ACTION:(' + (($script:actionDefs.Keys | Where-Object { $script:actionDefs[$_].AiSuggest } | ForEach-Object { [regex]::Escape($_) }) -join '|') + ')\]'
         $actionMatch = [regex]::Match($reply, $aiActionPattern)
-        if ($actionMatch.Success) {
+        if ($actionMatch.Success -and -not $script:advisorMode) {
             $actionId = $actionMatch.Groups[1].Value
             $reply = ($reply -replace '\s*\[ACTION:[^\]]+\]\s*', '').Trim()
         }
-        Add-Bubble $state.country $reply $false ((Get-Date).ToString('HH:mm'))
+        $speaker = if ($script:advisorMode) { '大肥鱼 · 参谋' } else { $state.country }
+        Add-Bubble $speaker $reply $false ((Get-Date).ToString('HH:mm'))
         if ($actionId) {
             $def = Get-ActionDef $actionId
             Add-SystemBubble "AI 同意采取行动：$($def.Name)。点左侧行动按钮生成命令，手动粘贴一次。" $UiCyan
@@ -2388,6 +2442,7 @@ $script:guarantees = @{}
 $script:guaranteedBy = @{}
 $script:enemies = @{}
 $script:logPos = 0
+$script:advisorMode = $false
 $script:cfg = Read-Config
 $script:player = if ($script:cfg.player_override) { [string]$script:cfg.player_override } else { Detect-Player }
 if (-not $script:player) { $script:player = 'GER' }
@@ -2650,6 +2705,51 @@ $form.Controls.Add($lblChatSub)
 $btnCopyChat = New-FlatButton '复制对话' 930 48 80 26 $UiCard
 $form.Controls.Add($btnCopyChat)
 $btnCopyChat.BringToFront()
+
+$btnAdvisor = New-FlatButton '同国参谋' 812 48 108 26 $UiCard
+$form.Controls.Add($btnAdvisor)
+$btnAdvisor.BringToFront()
+$btnAdvisor.Add_Click({
+    $script:advisorMode = -not $script:advisorMode
+    if ($script:advisorMode) {
+        $btnAdvisor.Text = '参谋模式：开'
+        $btnAdvisor.BackColor = [Drawing.Color]::FromArgb(58, 92, 112)
+        $lblAI.Text = '同国参谋'
+        $lblChatTitle.Text = '同国参谋'
+        $lblChatSub.Text = '大肥鱼看你的国家，给建议，不替你操作'
+        if ($script:welcomeHeading) { $script:welcomeHeading.Text = '让大肥鱼当你的参谋' }
+        if ($script:welcomeHint) { $script:welcomeHint.Text = '她看你的国家，给国策、内政、编制和战争建议。' }
+        if ($script:quickButtons.Count -ge 3) {
+            $script:quickButtons[0].Text = '下一步国策'
+            $script:quickButtons[0].Tag = '我接下来该走什么国策？请给优先级、理由和风险。'
+            $script:quickButtons[1].Text = '内政优先级'
+            $script:quickButtons[1].Tag = '我现在建造、科研、生产、编制应该怎么排优先级？'
+            $script:quickButtons[2].Text = '战争风险'
+            $script:quickButtons[2].Tag = '我当前的战争风险和外交方向怎么样？'
+        }
+        $lblStatus.Text = '同国参谋：基于每周国力给建议，不自动操作。'
+    } else {
+        $btnAdvisor.Text = '同国参谋'
+        $btnAdvisor.BackColor = $UiCard
+        $lblAI.Text = 'AI 国家'
+        $lblChatTitle.Text = 'AI 国家'
+        $lblChatSub.Text = '一个国家的耳语'
+        if ($script:welcomeHeading) { $script:welcomeHeading.Text = '和 AI 国家谈一局' }
+        if ($script:welcomeHint) { $script:welcomeHint.Text = '它会看自己的工厂、师、船和战争状态，也会记住你答应过什么。' }
+        if ($script:quickButtons.Count -ge 3) {
+            $script:quickButtons[0].Text = '分析局势'
+            $script:quickButtons[0].Tag = '帮我分析一下当前局势，我接下来该怎么走？'
+            $script:quickButtons[1].Text = '谈结盟'
+            $script:quickButtons[1].Tag = '我们结盟怎么样？你想要什么条件？'
+            $script:quickButtons[2].Text = '施压'
+            $script:quickButtons[2].Tag = '如果你不答应，我会考虑用武力解决。'
+        }
+        $lblStatus.Text = "就绪 · $($script:cfg.model)"
+    }
+    $comboAI.Enabled = -not $script:advisorMode
+    Update-Controls
+    Render-History
+})
 $btnCopyChat.Add_Click({
     $tag = Get-SelectedTag
     if (-not $tag) { return }
