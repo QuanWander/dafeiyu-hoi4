@@ -1,9 +1,9 @@
-﻿$script:actionDefs = [ordered]@{
+$script:actionDefs = [ordered]@{
     'join_faction' = @{
         Name = '加入你的阵营'
         Category = '外交'
         Desc = 'AI 国家加入你所在的阵营；需要你已经建立或加入一个阵营。'
-        Command = 'effect {0} add_to_faction = {1}'
+        Command = 'effect {1} add_to_faction = {0}'
         NeedsPlayer = $true
         AiSuggest = $true
         Verify = 'join'
@@ -90,7 +90,7 @@
         Name = '强制目标加入 AI 阵营'
         Category = '强制 · 不平等'
         Desc = '强行把目标国家拉进 AI 所在阵营。高风险：会改变阵营格局。'
-        Command = 'effect {2} add_to_faction = {0}'
+        Command = 'effect {0} add_to_faction = {2}'
         NeedsTarget = $true
         TargetDefault = 'none'
         Risk = 'high'
@@ -154,7 +154,7 @@
         Name = '邀请玩家加入 AI 阵营'
         Category = '对玩家 · 外交'
         Desc = '让玩家加入 AI 所在阵营。玩家已经有阵营时会失败。'
-        Command = 'effect {1} add_to_faction = {0}'
+        Command = 'effect {0} add_to_faction = {1}'
         Risk = 'high'
         AiSuggest = $true
         Verify = ''

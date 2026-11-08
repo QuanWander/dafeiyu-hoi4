@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.9.11 — 2026-11-08
+
+- **重大方向修复**：`add_to_faction = TAG` 的真实语义是“当前国家把 TAG 加入自己的阵营”，不是“当前国家加入 TAG 的阵营”。
+- “加入你的阵营”改为：玩家阵营领袖 `add_to_faction = AI`。
+- “强制目标加入 AI 阵营”改为：AI 阵营领袖 `add_to_faction = 目标`。
+- “邀请玩家加入 AI 阵营”改为：AI 阵营领袖 `add_to_faction = 玩家`。
+- 之前 v0.9.6 的“自动找领袖”方向是反的，已纠正。
+
 ## v0.9.10 — 2026-11-08
 
 - mod 的 `on_actions` 现在也记录**玩家国家**的 state/relations，不再只记录 AI。
