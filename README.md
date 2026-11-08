@@ -1,4 +1,4 @@
-# DaFeiYu HOI4（大肥鱼 HOI4）
+﻿# DaFeiYu HOI4（大肥鱼 HOI4）
 
 让《钢铁雄心 4》里的 AI 国家真正“会说话”：你玩一个国家，DeepSeek 扮演另一个国家；它读取自己的工厂、师、船、飞机、战争和阵营状态，记住你说过的话，和你谈判、拒绝、提条件。
 
@@ -145,8 +145,8 @@ dafeiyu-hoi4/
 
 ## 发布
 
-- 发布包：`dist/DaFeiYuHOI4-v0.9.12.zip`
-- 校验和：`dist/SHA256SUMS.txt`
+- GitHub Release：https://github.com/QuanWander/dafeiyu-hoi4/releases/tag/v0.9.12
+- 资产：`DaFeiYuHOI4-v0.9.12.zip`、`SHA256SUMS.txt`
 - 发布说明：[RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ## License
