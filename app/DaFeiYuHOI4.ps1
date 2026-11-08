@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.17'
+$script:appVersion = '0.9.18'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -16,18 +16,18 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-$UiBg = [Drawing.Color]::FromArgb(23, 18, 38)
-$UiSide = [Drawing.Color]::FromArgb(29, 22, 50)
-$UiCard = [Drawing.Color]::FromArgb(42, 34, 70)
-$UiCard2 = [Drawing.Color]::FromArgb(55, 44, 88)
-$UiText = [Drawing.Color]::FromArgb(248, 242, 255)
-$UiMuted = [Drawing.Color]::FromArgb(185, 171, 214)
-$UiCyan = [Drawing.Color]::FromArgb(143, 212, 255)
-$UiBlue = [Drawing.Color]::FromArgb(177, 139, 255)
-$UiGreen = [Drawing.Color]::FromArgb(143, 227, 192)
-$UiRed = [Drawing.Color]::FromArgb(255, 129, 154)
-$UiBubbleAi = [Drawing.Color]::FromArgb(44, 35, 73)
-$UiBubbleUser = [Drawing.Color]::FromArgb(124, 92, 230)
+$UiBg = [Drawing.Color]::FromArgb(18, 18, 17)
+$UiSide = [Drawing.Color]::FromArgb(26, 24, 21)
+$UiCard = [Drawing.Color]::FromArgb(36, 33, 28)
+$UiCard2 = [Drawing.Color]::FromArgb(48, 43, 36)
+$UiText = [Drawing.Color]::FromArgb(231, 224, 211)
+$UiMuted = [Drawing.Color]::FromArgb(158, 148, 134)
+$UiCyan = [Drawing.Color]::FromArgb(145, 168, 175)
+$UiBlue = [Drawing.Color]::FromArgb(122, 45, 38)
+$UiGreen = [Drawing.Color]::FromArgb(120, 139, 112)
+$UiRed = [Drawing.Color]::FromArgb(190, 88, 72)
+$UiBubbleAi = [Drawing.Color]::FromArgb(42, 38, 32)
+$UiBubbleUser = [Drawing.Color]::FromArgb(82, 34, 30)
 
 . (Join-Path $PSScriptRoot 'actions.ps1')
 
@@ -766,15 +766,15 @@ function Add-DreamBackground($control, [Drawing.Color]$from, [Drawing.Color]$to)
         $e.Graphics.FillRectangle($brush, $rect)
         $brush.Dispose()
 
-        $pink = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(34, 255, 143, 196))
-        $lav = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(30, 177, 139, 255))
-        $cyan = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(22, 143, 212, 255))
+        $pink = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(25, 190, 88, 72))
+        $lav = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(25, 145, 168, 175))
+        $cyan = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(20, 145, 168, 175))
         $e.Graphics.FillEllipse($pink, -90, -70, 300, 300)
         $e.Graphics.FillEllipse($lav, $rect.Width - 170, -60, 320, 320)
         $e.Graphics.FillEllipse($cyan, $rect.Width / 3, $rect.Height - 80, 300, 220)
         $pink.Dispose(); $lav.Dispose(); $cyan.Dispose()
 
-        $starBrush = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(150, 255, 226, 244))
+        $starBrush = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(110, 231, 224, 211))
         $starFont = New-Object Drawing.Font('Segoe UI Symbol', 10)
         $e.Graphics.DrawString('✦', $starFont, $starBrush, ($rect.Width - 42), 18)
         $e.Graphics.DrawString('✧', $starFont, $starBrush, ($rect.Width - 80), 54)
@@ -819,8 +819,8 @@ function New-FlatButton([string]$text, [int]$x, [int]$y, [int]$w, [int]$h, [Draw
     $button.ForeColor = $UiText
     $button.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
     $button.Cursor = [Windows.Forms.Cursors]::Hand
-    $button.FlatAppearance.MouseOverBackColor = [Drawing.Color]::FromArgb(58, 45, 90)
-    $button.FlatAppearance.MouseDownBackColor = [Drawing.Color]::FromArgb(70, 55, 106)
+    $button.FlatAppearance.MouseOverBackColor = [Drawing.Color]::FromArgb(52, 46, 39)
+    $button.FlatAppearance.MouseDownBackColor = [Drawing.Color]::FromArgb(60, 53, 44)
     Set-Rounded $button 8
     return $button
 }
@@ -875,7 +875,7 @@ function Add-Bubble([string]$speaker, [string]$message, [bool]$isUser, [string]$
     $bubble = New-Object System.Windows.Forms.Panel
     $bubble.Size = New-Object Drawing.Size($bubbleWidth, $bubbleHeight)
     $bubble.BackColor = if ($isUser) { $UiBubbleUser } else { $UiBubbleAi }
-    $borderColor = if ($isUser) { [Drawing.Color]::FromArgb(120, 255, 194, 225) } else { [Drawing.Color]::FromArgb(80, 143, 212, 255) }
+    $borderColor = if ($isUser) { [Drawing.Color]::FromArgb(100, 181, 146, 94) } else { [Drawing.Color]::FromArgb(60, 145, 168, 175) }
     $bubble | Add-Member -NotePropertyName DfyBorderColor -NotePropertyValue $borderColor -Force
     $bubble.Add_Paint({
         param($s, $e)
@@ -893,7 +893,7 @@ function Add-Bubble([string]$speaker, [string]$message, [bool]$isUser, [string]$
     $senderLabel.Size = New-Object Drawing.Size(($bubbleWidth - 24), 18)
     $senderLabel.Location = New-Object Drawing.Point(12, 6)
     $senderLabel.Font = New-Object Drawing.Font('Microsoft YaHei UI', 8, [Drawing.FontStyle]::Bold)
-    $senderLabel.ForeColor = if ($isUser) { [Drawing.Color]::FromArgb(255, 209, 230) } else { [Drawing.Color]::FromArgb(143, 212, 255) }
+    $senderLabel.ForeColor = if ($isUser) { [Drawing.Color]::FromArgb(181, 146, 94) } else { [Drawing.Color]::FromArgb(145, 168, 175) }
     $senderLabel.BackColor = $bubble.BackColor
     $bubble.Controls.Add($senderLabel)
 
@@ -914,7 +914,7 @@ function Add-Bubble([string]$speaker, [string]$message, [bool]$isUser, [string]$
     } else {
         New-Object Drawing.Point(6, 4)
     }
-    $avatar.BackColor = if ($isUser) { [Drawing.Color]::FromArgb(244, 114, 182) } else { [Drawing.Color]::FromArgb(94, 234, 212) }
+    $avatar.BackColor = if ($isUser) { [Drawing.Color]::FromArgb(190, 88, 72) } else { [Drawing.Color]::FromArgb(105, 135, 120) }
     Set-Rounded $avatar 15
     $avatarText = New-Object System.Windows.Forms.Label
     $avatarText.Text = if ($speaker.Length -ge 1) { $speaker.Substring(0, 1) } else { '?' }
@@ -949,14 +949,14 @@ function Add-Welcome {
     $card = New-Object System.Windows.Forms.Panel
     $card.Location = New-Object Drawing.Point(0, 0)
     $card.Size = New-Object Drawing.Size($row.Width, 194)
-    $card.BackColor = [Drawing.Color]::FromArgb(44, 34, 72)
+    $card.BackColor = [Drawing.Color]::FromArgb(38, 34, 29)
     Set-Rounded $card 22
     $row.Controls.Add($card)
 
     $logoFrame = New-Object System.Windows.Forms.Panel
     $logoFrame.Location = New-Object Drawing.Point(22, 22)
     $logoFrame.Size = New-Object Drawing.Size(58, 58)
-    $logoFrame.BackColor = [Drawing.Color]::FromArgb(63, 47, 96)
+    $logoFrame.BackColor = [Drawing.Color]::FromArgb(58, 51, 42)
     Set-Rounded $logoFrame 18
     $card.Controls.Add($logoFrame)
 
@@ -982,7 +982,7 @@ function Add-Welcome {
     $eyebrow = New-Object System.Windows.Forms.Label
     $eyebrow.Text = 'A  QUIET  WAR  ROOM'
     $eyebrow.Font = New-Object Drawing.Font('Segoe UI', 7, [Drawing.FontStyle]::Bold)
-    $eyebrow.ForeColor = [Drawing.Color]::FromArgb(255, 158, 208)
+    $eyebrow.ForeColor = [Drawing.Color]::FromArgb(181, 146, 94)
     $eyebrow.Location = New-Object Drawing.Point(96, 20)
     $eyebrow.Size = New-Object Drawing.Size(300, 16)
     $card.Controls.Add($eyebrow)
@@ -1007,7 +1007,7 @@ function Add-Welcome {
     $spark = New-Object System.Windows.Forms.Label
     $spark.Text = '✦'
     $spark.Font = New-Object Drawing.Font('Segoe UI Symbol', 18)
-    $spark.ForeColor = [Drawing.Color]::FromArgb(180, 255, 194, 225)
+    $spark.ForeColor = [Drawing.Color]::FromArgb(120, 181, 146, 94)
     $spark.BackColor = [Drawing.Color]::Transparent
     $spark.Location = New-Object Drawing.Point(($row.Width - 54), 18)
     $spark.Size = New-Object Drawing.Size(40, 34)
@@ -1029,7 +1029,7 @@ function Add-Welcome {
     $script:quickButtons.Clear()
     $x = 22
     foreach ($item in $prompts) {
-        $btn = New-FlatButton $item.text $x 118 120 34 ([Drawing.Color]::FromArgb(56, 43, 88))
+        $btn = New-FlatButton $item.text $x 118 120 34 ([Drawing.Color]::FromArgb(51, 46, 38))
         $btn.Tag = $item.say
         [void]$script:quickButtons.Add($btn)
         $btn.Add_Click({
@@ -1186,7 +1186,7 @@ function Update-StateCard {
     $lblChatSub.Text = if ($script:advisorMode) { '大肥鱼看你的国家，给建议 · ' + $warText } else { "一个国家的耳语 · $warText · 档案已同步" }
     $lblFlag.Text = $tag
     $lblFlag.Visible = $true
-    $flag.BackColor = [Drawing.Color]::FromArgb(74, 53, 107)
+    $flag.BackColor = [Drawing.Color]::FromArgb(78, 67, 52)
 }
 
 function Update-Controls {
@@ -1248,7 +1248,7 @@ function Update-Controls {
     $game = [bool](Get-Process hoi4 -ErrorAction SilentlyContinue)
     $lblGame.Text = if ($game) { '● 游戏运行中' } else { '● 游戏未运行' }
     $lblGame.ForeColor = [Drawing.Color]::White
-    $lblGame.BackColor = if ($game) { [Drawing.Color]::FromArgb(42, 122, 102) } else { [Drawing.Color]::FromArgb(57, 44, 84) }
+    $lblGame.BackColor = if ($game) { [Drawing.Color]::FromArgb(74, 98, 82) } else { [Drawing.Color]::FromArgb(57, 44, 84) }
     $lblPlayer.Text = "你：$($script:player)" + $(if ($script:cfg.player_override) { ' · 手动' } else { '' })
     $lblCampaign.Text = "本局：$($script:campaignTitle)"
     $lblTokens.Text = "本次会话 tokens：$($script:tokens)"
@@ -1275,7 +1275,7 @@ function Show-MemoryDialog {
     $dialog.MaximizeBox = $false
     $dialog.MinimizeBox = $false
     $dialog.BackColor = $UiBg
-    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(36, 27, 62)) ([Drawing.Color]::FromArgb(22, 18, 38))
+    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(29, 27, 23)) ([Drawing.Color]::FromArgb(20, 19, 17))
     $dialog.ForeColor = $UiText
     $dialog.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
 
@@ -1414,7 +1414,7 @@ function Show-PlayerDialog {
     $dialog.BackColor = $UiBg
     $dialog.ForeColor = $UiText
     $dialog.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
-    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(38, 28, 66)) ([Drawing.Color]::FromArgb(22, 18, 38))
+    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(33, 30, 25)) ([Drawing.Color]::FromArgb(20, 19, 17))
 
     $title = New-Object System.Windows.Forms.Label
     $title.Text = '你实际玩哪个国家？'
@@ -1525,7 +1525,7 @@ function Set-HelpContent($box, [string]$text) {
         $line = $line.TrimEnd()
         if ($line -match '^## ') {
             $box.SelectionFont = New-Object Drawing.Font('Microsoft YaHei UI', 12, [Drawing.FontStyle]::Bold)
-            $box.SelectionColor = [Drawing.Color]::FromArgb(255, 158, 208)
+            $box.SelectionColor = [Drawing.Color]::FromArgb(181, 146, 94)
             $box.AppendText($line.Substring(3) + "`n")
         } elseif ($line -match '^· ') {
             $box.SelectionFont = New-Object Drawing.Font('Microsoft YaHei UI', 10)
@@ -1552,12 +1552,12 @@ function Show-Help([string]$section = '第一次使用') {
     $dialog.BackColor = $UiBg
     $dialog.ForeColor = $UiText
     $dialog.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
-    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(38, 28, 66)) ([Drawing.Color]::FromArgb(22, 18, 38))
+    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(33, 30, 25)) ([Drawing.Color]::FromArgb(20, 19, 17))
 
     $headCard = New-Object System.Windows.Forms.Panel
     $headCard.Location = New-Object Drawing.Point(10, 8)
     $headCard.Size = New-Object Drawing.Size(820, 70)
-    $headCard.BackColor = [Drawing.Color]::FromArgb(42, 31, 66)
+    $headCard.BackColor = [Drawing.Color]::FromArgb(35, 32, 27)
     Set-Rounded $headCard 16
     $dialog.Controls.Add($headCard)
 
@@ -1692,7 +1692,7 @@ function Show-Settings {
     $dialog.MaximizeBox = $false
     $dialog.MinimizeBox = $false
     $dialog.BackColor = $UiBg
-    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(36, 27, 62)) ([Drawing.Color]::FromArgb(22, 18, 38))
+    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(29, 27, 23)) ([Drawing.Color]::FromArgb(20, 19, 17))
     $dialog.ForeColor = $UiText
     $dialog.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
 
@@ -1910,7 +1910,7 @@ function Show-AdvisorContextDialog {
     $dialog.MaximizeBox = $false
     $dialog.MinimizeBox = $false
     $dialog.BackColor = $UiBg
-    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(38, 29, 66)) ([Drawing.Color]::FromArgb(22, 18, 38))
+    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(34, 31, 26)) ([Drawing.Color]::FromArgb(20, 19, 17))
     $dialog.ForeColor = $UiText
     $dialog.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
 
@@ -2032,7 +2032,7 @@ function Show-ActionPicker {
     $dialog.MaximizeBox = $false
     $dialog.MinimizeBox = $false
     $dialog.BackColor = $UiBg
-    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(36, 27, 62)) ([Drawing.Color]::FromArgb(22, 18, 38))
+    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(29, 27, 23)) ([Drawing.Color]::FromArgb(20, 19, 17))
     $dialog.ForeColor = $UiText
     $dialog.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
     $dialog.TopMost = $true
@@ -2212,7 +2212,7 @@ function Show-ActionPicker {
         $def = $script:actionDefs[$id]
         $desc.Text = $def.Desc
         $risk.Text = if ($def.Risk -eq 'extreme') { '极高风险：会永久改变存档，建议先备份' } elseif ($def.Risk -eq 'high') { '高风险：会直接改变外交/战争状态' } elseif ($def.Risk -eq 'medium') { '中风险：会明显增强 AI' } else { '低风险：常规支援' }
-        $risk.ForeColor = if ($def.Risk -in @('high', 'extreme')) { $UiRed } elseif ($def.Risk -eq 'medium') { [Drawing.Color]::FromArgb(255, 196, 120) } else { $UiGreen }
+        $risk.ForeColor = if ($def.Risk -in @('high', 'extreme')) { $UiRed } elseif ($def.Risk -eq 'medium') { [Drawing.Color]::FromArgb(190, 150, 95) } else { $UiGreen }
         $targetLabel.Visible = [bool]$def.NeedsTarget
         $target.Visible = [bool]$def.NeedsTarget
         $amountLabel.Visible = [bool]$def.NeedsAmount
@@ -2355,7 +2355,7 @@ function Show-ActionDialog([string]$id, [string]$aiTag, [string]$target = '', [s
     $dialog.MaximizeBox = $false
     $dialog.MinimizeBox = $false
     $dialog.BackColor = $UiBg
-    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(36, 27, 62)) ([Drawing.Color]::FromArgb(22, 18, 38))
+    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(29, 27, 23)) ([Drawing.Color]::FromArgb(20, 19, 17))
     $dialog.ForeColor = $UiText
     $dialog.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
     $dialog.TopMost = $true
@@ -2487,7 +2487,7 @@ function Show-CustomAction([string]$aiTag) {
     $dialog.MaximizeBox = $false
     $dialog.MinimizeBox = $false
     $dialog.BackColor = $UiBg
-    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(36, 27, 62)) ([Drawing.Color]::FromArgb(22, 18, 38))
+    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(29, 27, 23)) ([Drawing.Color]::FromArgb(20, 19, 17))
     $dialog.ForeColor = $UiText
     $dialog.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
 
@@ -2748,7 +2748,7 @@ $script:loadingCombo = $false
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = '大肥鱼 HOI4'
-$form.ClientSize = New-Object Drawing.Size(1040, 660)
+$form.ClientSize = New-Object Drawing.Size(1200, 720)
 $form.StartPosition = 'Manual'
 $form.Location = New-Object Drawing.Point(20, 10)
 $form.FormBorderStyle = 'FixedSingle'
@@ -2756,19 +2756,19 @@ $form.MaximizeBox = $false
 $form.BackColor = $UiBg
 $form.ForeColor = $UiText
 $form.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
-Add-DreamBackground $form ([Drawing.Color]::FromArgb(27, 21, 48)) ([Drawing.Color]::FromArgb(19, 25, 43))
+Add-DreamBackground $form ([Drawing.Color]::FromArgb(23, 21, 19)) ([Drawing.Color]::FromArgb(18, 18, 17))
 
 $sidebar = New-Object System.Windows.Forms.Panel
 $sidebar.Location = New-Object Drawing.Point(0, 0)
-$sidebar.Size = New-Object Drawing.Size(300, 660)
+$sidebar.Size = New-Object Drawing.Size(340, 720)
 $sidebar.BackColor = $UiSide
-Add-DreamBackground $sidebar ([Drawing.Color]::FromArgb(38, 28, 66)) ([Drawing.Color]::FromArgb(22, 18, 38))
+Add-DreamBackground $sidebar ([Drawing.Color]::FromArgb(33, 30, 25)) ([Drawing.Color]::FromArgb(20, 19, 17))
 $form.Controls.Add($sidebar)
 
 $logoFrame = New-Object System.Windows.Forms.Panel
 $logoFrame.Location = New-Object Drawing.Point(18, 14)
 $logoFrame.Size = New-Object Drawing.Size(66, 66)
-$logoFrame.BackColor = [Drawing.Color]::FromArgb(52, 39, 82)
+$logoFrame.BackColor = [Drawing.Color]::FromArgb(47, 42, 34)
 Set-Rounded $logoFrame 20
 $sidebar.Controls.Add($logoFrame)
 
@@ -2787,7 +2787,7 @@ if (Test-Path -LiteralPath $logoPath) {
     $logoFallback.Dock = 'Fill'
     $logoFallback.TextAlign = 'MiddleCenter'
     $logoFallback.Font = New-Object Drawing.Font('Microsoft YaHei UI', 22, [Drawing.FontStyle]::Bold)
-    $logoFallback.ForeColor = [Drawing.Color]::FromArgb(255, 194, 225)
+    $logoFallback.ForeColor = [Drawing.Color]::FromArgb(181, 146, 94)
     $logoFallback.BackColor = [Drawing.Color]::Transparent
     $logoFrame.Controls.Add($logoFallback)
 }
@@ -2795,19 +2795,19 @@ if (Test-Path -LiteralPath $logoPath) {
 $eyebrow = New-Object System.Windows.Forms.Label
 $eyebrow.Text = 'WHALE  &  IRON'
 $eyebrow.Font = New-Object Drawing.Font('Segoe UI', 7, [Drawing.FontStyle]::Bold)
-$eyebrow.ForeColor = [Drawing.Color]::FromArgb(255, 158, 208)
+$eyebrow.ForeColor = [Drawing.Color]::FromArgb(181, 146, 94)
 $eyebrow.Location = New-Object Drawing.Point(94, 12)
-$eyebrow.Size = New-Object Drawing.Size(204, 16)
+$eyebrow.Size = New-Object Drawing.Size(236, 16)
 $sidebar.Controls.Add($eyebrow)
 
 $title = New-Object System.Windows.Forms.Panel
 $title.Location = New-Object Drawing.Point(92, 28)
-$title.Size = New-Object Drawing.Size(206, 34)
+$title.Size = New-Object Drawing.Size(236, 34)
 $title.BackColor = [Drawing.Color]::Transparent
 $title.Add_Paint({
     param($s, $e)
     $rect = New-Object Drawing.RectangleF(0, 0, $s.Width, $s.Height)
-    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush($rect, [Drawing.Color]::FromArgb(255, 158, 208), [Drawing.Color]::FromArgb(143, 212, 255), 0)
+    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush($rect, [Drawing.Color]::FromArgb(181, 146, 94), [Drawing.Color]::FromArgb(145, 168, 175), 0)
     $font = New-Object Drawing.Font('Microsoft YaHei UI', 16, [Drawing.FontStyle]::Bold)
     $format = New-Object Drawing.StringFormat
     $format.LineAlignment = 'Center'
@@ -2817,16 +2817,16 @@ $title.Add_Paint({
 $sidebar.Controls.Add($title)
 
 $subtitle = New-Object System.Windows.Forms.Label
-$subtitle.Text = '钢铁与海浪之间，听一个国家'
+$subtitle.Text = '在钢铁与海浪之间，听一个国家说话'
 $subtitle.ForeColor = $UiMuted
 $subtitle.Location = New-Object Drawing.Point(94, 58)
-$subtitle.Size = New-Object Drawing.Size(204, 18)
+$subtitle.Size = New-Object Drawing.Size(236, 18)
 $sidebar.Controls.Add($subtitle)
 
 $accent = New-Object System.Windows.Forms.Panel
 $accent.Location = New-Object Drawing.Point(98, 80)
 $accent.Size = New-Object Drawing.Size(46, 2)
-$accent.BackColor = [Drawing.Color]::FromArgb(255, 158, 208)
+$accent.BackColor = [Drawing.Color]::FromArgb(181, 146, 94)
 $sidebar.Controls.Add($accent)
 
 $lblPlayer = New-Object System.Windows.Forms.Label
@@ -2860,7 +2860,7 @@ $sidebar.Controls.Add($lblAI)
 $comboAI = New-Object System.Windows.Forms.ComboBox
 $comboAI.DropDownStyle = 'DropDownList'
 $comboAI.Location = New-Object Drawing.Point(22, 188)
-$comboAI.Size = New-Object Drawing.Size(256, 26)
+$comboAI.Size = New-Object Drawing.Size(296, 26)
 $comboAI.BackColor = $UiCard2
 $comboAI.ForeColor = $UiText
 $comboAI.FlatStyle = 'Flat'
@@ -2868,10 +2868,10 @@ $sidebar.Controls.Add($comboAI)
 
 $stateCard = New-Object System.Windows.Forms.Panel
 $stateCard.Location = New-Object Drawing.Point(20, 232)
-$stateCard.Size = New-Object Drawing.Size(260, 192)
+$stateCard.Size = New-Object Drawing.Size(300, 192)
 $stateCard.BackColor = $UiCard
-Add-Gradient $stateCard ([Drawing.Color]::FromArgb(48, 37, 78)) ([Drawing.Color]::FromArgb(36, 28, 61))
-Add-SoftBorder $stateCard ([Drawing.Color]::FromArgb(95, 255, 194, 225))
+Add-Gradient $stateCard ([Drawing.Color]::FromArgb(42, 38, 32)) ([Drawing.Color]::FromArgb(28, 26, 22))
+Add-SoftBorder $stateCard ([Drawing.Color]::FromArgb(75, 181, 146, 94))
 Set-Rounded $stateCard 18
 $sidebar.Controls.Add($stateCard)
 
@@ -2880,7 +2880,7 @@ $lblCountry.Text = '等待状态'
 $lblCountry.Font = New-Object Drawing.Font('Microsoft YaHei UI', 12, [Drawing.FontStyle]::Bold)
 $lblCountry.ForeColor = $UiText
 $lblCountry.Location = New-Object Drawing.Point(14, 12)
-$lblCountry.Size = New-Object Drawing.Size(232, 26)
+$lblCountry.Size = New-Object Drawing.Size(272, 26)
 $stateCard.Controls.Add($lblCountry)
 
 $lblWar = New-Object System.Windows.Forms.Label
@@ -2888,42 +2888,42 @@ $lblWar.Text = '进游戏并过一周'
 $lblWar.Font = New-Object Drawing.Font('Microsoft YaHei UI', 8)
 $lblWar.ForeColor = $UiMuted
 $lblWar.Location = New-Object Drawing.Point(14, 40)
-$lblWar.Size = New-Object Drawing.Size(232, 18)
+$lblWar.Size = New-Object Drawing.Size(272, 18)
 $stateCard.Controls.Add($lblWar)
 
 $lblFactories = New-Object System.Windows.Forms.Label
 $lblFactories.Text = '民用 —   军工 —   船坞 —'
 $lblFactories.ForeColor = $UiText
 $lblFactories.Location = New-Object Drawing.Point(14, 66)
-$lblFactories.Size = New-Object Drawing.Size(232, 20)
+$lblFactories.Size = New-Object Drawing.Size(272, 20)
 $stateCard.Controls.Add($lblFactories)
 
 $lblArmy = New-Object System.Windows.Forms.Label
 $lblArmy.Text = '师 —   人力 —'
 $lblArmy.ForeColor = $UiMuted
 $lblArmy.Location = New-Object Drawing.Point(14, 94)
-$lblArmy.Size = New-Object Drawing.Size(232, 20)
+$lblArmy.Size = New-Object Drawing.Size(272, 20)
 $stateCard.Controls.Add($lblArmy)
 
 $lblNavy = New-Object System.Windows.Forms.Label
 $lblNavy.Text = '舰船 —   飞机 —'
 $lblNavy.ForeColor = $UiMuted
 $lblNavy.Location = New-Object Drawing.Point(14, 118)
-$lblNavy.Size = New-Object Drawing.Size(232, 20)
+$lblNavy.Size = New-Object Drawing.Size(272, 20)
 $stateCard.Controls.Add($lblNavy)
 
 $lblPolitics = New-Object System.Windows.Forms.Label
 $lblPolitics.Text = '政治 —   稳定 —   战争支持 —'
 $lblPolitics.ForeColor = $UiMuted
 $lblPolitics.Location = New-Object Drawing.Point(14, 144)
-$lblPolitics.Size = New-Object Drawing.Size(232, 20)
+$lblPolitics.Size = New-Object Drawing.Size(272, 20)
 $stateCard.Controls.Add($lblPolitics)
 
 $lblDiplomacy = New-Object System.Windows.Forms.Label
 $lblDiplomacy.Text = '科研槽 —   阵营 —'
 $lblDiplomacy.ForeColor = $UiMuted
 $lblDiplomacy.Location = New-Object Drawing.Point(14, 168)
-$lblDiplomacy.Size = New-Object Drawing.Size(232, 20)
+$lblDiplomacy.Size = New-Object Drawing.Size(272, 20)
 $stateCard.Controls.Add($lblDiplomacy)
 
 $btnGame = New-FlatButton '启动游戏' 20 432 125 36 $UiCard
@@ -2955,7 +2955,7 @@ $sidebar.Controls.Add($lblTokens)
 
 $lblVersion = New-Object System.Windows.Forms.Label
 $lblVersion.Text = "v$($script:appVersion) · 独立版"
-$lblVersion.ForeColor = [Drawing.Color]::FromArgb(90, 106, 128)
+$lblVersion.ForeColor = [Drawing.Color]::FromArgb(102, 104, 100)
 $lblVersion.Location = New-Object Drawing.Point(22, 630)
 $lblVersion.Size = New-Object Drawing.Size(256, 20)
 $sidebar.Controls.Add($lblVersion)
@@ -2980,26 +2980,26 @@ $lblChatTitle = New-Object System.Windows.Forms.Label
 $lblChatTitle.Text = 'AI 国家'
 $lblChatTitle.Font = New-Object Drawing.Font('Microsoft YaHei UI', 15, [Drawing.FontStyle]::Bold)
 $lblChatTitle.ForeColor = $UiText
-$lblChatTitle.Location = New-Object Drawing.Point(378, 18)
-$lblChatTitle.Size = New-Object Drawing.Size(630, 30)
+$lblChatTitle.Location = New-Object Drawing.Point(418, 18)
+$lblChatTitle.Size = New-Object Drawing.Size(450, 30)
 $form.Controls.Add($lblChatTitle)
 
 $lblChatSub = New-Object System.Windows.Forms.Label
 $lblChatSub.Text = '一个国家的耳语'
 $lblChatSub.ForeColor = $UiMuted
-$lblChatSub.Location = New-Object Drawing.Point(378, 50)
-$lblChatSub.Size = New-Object Drawing.Size(540, 20)
+$lblChatSub.Location = New-Object Drawing.Point(418, 50)
+$lblChatSub.Size = New-Object Drawing.Size(480, 20)
 $form.Controls.Add($lblChatSub)
 
-$btnCopyChat = New-FlatButton '复制对话' 930 48 80 26 $UiCard
+$btnCopyChat = New-FlatButton '复制对话' 1074 48 80 26 $UiCard
 $form.Controls.Add($btnCopyChat)
 $btnCopyChat.BringToFront()
 
-$btnAdvisor = New-FlatButton '同国参谋' 812 48 108 26 $UiCard
+$btnAdvisor = New-FlatButton '同国参谋' 956 48 108 26 $UiCard
 $form.Controls.Add($btnAdvisor)
 $btnAdvisor.BringToFront()
 
-$btnAdvisorInfo = New-FlatButton '资料' 736 48 64 26 $UiCard
+$btnAdvisorInfo = New-FlatButton '资料' 880 48 64 26 $UiCard
 $btnAdvisorInfo.Visible = $false
 $form.Controls.Add($btnAdvisorInfo)
 $btnAdvisorInfo.BringToFront()
@@ -3008,7 +3008,7 @@ $btnAdvisor.Add_Click({
     $script:advisorMode = -not $script:advisorMode
     if ($script:advisorMode) {
         $btnAdvisor.Text = '参谋模式：开'
-        $btnAdvisor.BackColor = [Drawing.Color]::FromArgb(58, 92, 112)
+        $btnAdvisor.BackColor = [Drawing.Color]::FromArgb(68, 83, 86)
         $btnAdvisorInfo.Visible = $true
         $lblAI.Text = '同国参谋'
         $lblChatTitle.Text = '同国参谋'
@@ -3062,10 +3062,10 @@ $btnCopyChat.Add_Click({
 })
 
 $chatPanel = New-Object System.Windows.Forms.FlowLayoutPanel
-$chatPanel.Location = New-Object Drawing.Point(318, 80)
-$chatPanel.Size = New-Object Drawing.Size(704, 468)
+$chatPanel.Location = New-Object Drawing.Point(358, 80)
+$chatPanel.Size = New-Object Drawing.Size(806, 508)
 $chatPanel.BackColor = $UiBg
-Add-DreamBackground $chatPanel ([Drawing.Color]::FromArgb(30, 23, 53)) ([Drawing.Color]::FromArgb(20, 20, 38))
+Add-DreamBackground $chatPanel ([Drawing.Color]::FromArgb(30, 27, 23)) ([Drawing.Color]::FromArgb(19, 19, 18))
 $chatPanel.AutoScroll = $true
 $chatPanel.FlowDirection = 'TopDown'
 $chatPanel.WrapContents = $false
@@ -3073,16 +3073,16 @@ $chatPanel.Padding = New-Object System.Windows.Forms.Padding(4)
 $form.Controls.Add($chatPanel)
 
 $inputCard = New-Object System.Windows.Forms.Panel
-$inputCard.Location = New-Object Drawing.Point(318, 558)
-$inputCard.Size = New-Object Drawing.Size(704, 54)
+$inputCard.Location = New-Object Drawing.Point(358, 600)
+$inputCard.Size = New-Object Drawing.Size(806, 54)
 $inputCard.BackColor = $UiCard
-Add-SoftBorder $inputCard ([Drawing.Color]::FromArgb(80, 255, 194, 225))
+Add-SoftBorder $inputCard ([Drawing.Color]::FromArgb(60, 181, 146, 94))
 Set-Rounded $inputCard 18
 $form.Controls.Add($inputCard)
 
 $inputBox = New-Object System.Windows.Forms.TextBox
 $inputBox.Location = New-Object Drawing.Point(14, 14)
-$inputBox.Size = New-Object Drawing.Size(570, 26)
+$inputBox.Size = New-Object Drawing.Size(672, 26)
 $inputBox.BackColor = $UiCard
 $inputBox.ForeColor = $UiText
 $inputBox.BorderStyle = 'None'
@@ -3101,7 +3101,7 @@ $inputHint.BringToFront()
 
 $sendButton = New-Object System.Windows.Forms.Button
 $sendButton.Text = '寄出'
-$sendButton.Location = New-Object Drawing.Point(598, 8)
+$sendButton.Location = New-Object Drawing.Point(700, 8)
 $sendButton.Size = New-Object Drawing.Size(94, 38)
 $sendButton.FlatStyle = 'Flat'
 $sendButton.FlatAppearance.BorderSize = 0
@@ -3113,8 +3113,8 @@ $inputCard.Controls.Add($sendButton)
 $lblStatus = New-Object System.Windows.Forms.Label
 $lblStatus.Text = "就绪 · $($script:cfg.model)"
 $lblStatus.ForeColor = $UiMuted
-$lblStatus.Location = New-Object Drawing.Point(322, 622)
-$lblStatus.Size = New-Object Drawing.Size(690, 20)
+$lblStatus.Location = New-Object Drawing.Point(362, 668)
+$lblStatus.Size = New-Object Drawing.Size(800, 20)
 $form.Controls.Add($lblStatus)
 
 $btnGame.Add_Click({
