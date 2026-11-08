@@ -1,4 +1,4 @@
-dfy_log_state = {
+﻿dfy_log_state = {
 	set_temp_variable = { dfy_civ = num_of_civilian_factories }
 	set_temp_variable = { dfy_mil = num_of_military_factories }
 	set_temp_variable = { dfy_dock = num_of_naval_factories }
@@ -29,6 +29,10 @@ dfy_log_state = {
 }
 
 dfy_log_relations = {
+	if = {
+		limit = { is_faction_leader = yes }
+		log = "DFY|faction_leader|tag=[THIS.GetTag]"
+	}
 	every_country = {
 		if = {
 			limit = { is_in_faction_with = ROOT }

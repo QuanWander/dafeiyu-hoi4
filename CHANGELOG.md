@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.9.4 — 2026-11-08
+
+- 阵营日志新增 `DFY|faction_leader`。
+- “加入你的阵营”现在会自动找玩家所在阵营的领袖：玩家在德国阵营时，命令生成
+  `eval_effect ENG = { add_to_faction = GER }`，不再错误地写 `ITA`。
+- 玩家自己就是领袖时仍用玩家 tag。
+- 英国已经是同盟国领袖时，仍需先让它退出原阵营，否则 `add_to_faction` 可能静默失败。
+
 ## v0.9.3 — 2026-11-08
 
 - 修复“启动游戏”直接运行 hoi4.exe 导致 Steam/DLC 不加载：改为 `steam.exe -applaunch 394360 -debug_mode`。

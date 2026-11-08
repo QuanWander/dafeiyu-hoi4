@@ -6,7 +6,7 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.3'
+$script:appVersion = '0.9.4'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -980,7 +980,7 @@ function Read-Log {    if (-not (Test-Path -LiteralPath $LogPath)) { return }
                 }
                 continue
             }
-            if ($line -match 'DFY\|(faction|guarantee|guaranteed_by|enemy)\|(.+)$') {
+            if ($line -match 'DFY\|(faction|guarantee|guaranteed_by|enemy|faction_leader)\|(.+)$') {
                 $kind = $Matches[1]
                 $payload = $Matches[2].Trim()
                 $parts = $payload -split '\|'
@@ -989,7 +989,9 @@ function Read-Log {    if (-not (Test-Path -LiteralPath $LogPath)) { return }
                     if ($part -match '^([^=]+)=(.*)$') { $rel[$Matches[1]] = $Matches[2] }
                 }
                 if (-not $rel.tag) { continue }
-                if ($kind -eq 'faction' -and $rel.member) {
+                if ($kind -eq 'faction_leader') {
+                    $script:factionLeaders[$rel.tag] = $true
+                } elseif ($kind -eq 'faction' -and $rel.member) {
                     $script:factionMembers[$rel.tag] = @(@($script:factionMembers[$rel.tag]) + $rel.member | Select-Object -Unique)
                 } elseif ($kind -eq 'guarantee' -and $rel.target) {
                     $script:guarantees[$rel.tag] = @(@($script:guarantees[$rel.tag]) + $rel.target | Select-Object -Unique)
@@ -1640,6 +1642,13 @@ function Get-ActionDef([string]$id) {
     return $script:actionDefs[$id]
 }
 
+function Get-PlayerFactionLeader {
+    foreach ($leader in @($script:factionLeaders.Keys)) {
+        if (@($script:factionMembers[$leader]) -contains $script:player) { return $leader }
+    }
+    return $script:player
+}
+
 function Get-ActionTextControl($dialog) {
     if (-not $dialog) { return $null }
     foreach ($control in $dialog.Controls) {
@@ -1672,7 +1681,9 @@ function Get-ActionCommand([string]$id, [string]$aiTag, [string]$target = '', [s
         $amountText = $num.ToString('0.######', [Globalization.CultureInfo]::InvariantCulture)
     }
     $command = [string]$def.Command
-    $command = $command.Replace('{0}', $aiTag).Replace('{1}', [string]$script:player).Replace('{2}', $targetTag).Replace('{3}', $amountText).Replace('{4}', [string]$text)
+    $scopePlayer = $script:player
+    if ($id -eq 'join_faction') { $scopePlayer = Get-PlayerFactionLeader }
+    $command = $command.Replace('{0}', $aiTag).Replace('{1}', [string]$scopePlayer).Replace('{2}', $targetTag).Replace('{3}', $amountText).Replace('{4}', [string]$text)
     if ($command -match '^effect\s+([A-Z0-9]{3})\s+(.+)$') {
         $scopeTag = $matches[1]
         $body = $matches[2].Trim()
@@ -2339,6 +2350,7 @@ $aiActionText
 
 $script:states = @{}
 $script:factionMembers = @{}
+$script:factionLeaders = @{}
 $script:guarantees = @{}
 $script:guaranteedBy = @{}
 $script:enemies = @{}
