@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.14'
+$script:appVersion = '0.9.15'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -1788,11 +1788,49 @@ function Get-ActionCommand([string]$id, [string]$aiTag, [string]$target = '', [s
     return $command
 }
 
+function Get-FocusChoices([string]$tag) {
+    if (-not $tag) { return @() }
+    if ($script:focusChoiceCache.ContainsKey($tag)) { return $script:focusChoiceCache[$tag] }
+    $choices = New-Object System.Collections.ArrayList
+    $exe = Find-Hoi4
+    if (-not $exe) { $script:focusChoiceCache[$tag] = @(); return @() }
+    $root = Split-Path $exe -Parent
+    $loc = @{}
+    $locDir = Join-Path $root 'localisation\simp_chinese'
+    if (Test-Path -LiteralPath $locDir) {
+        foreach ($f in (Get-ChildItem $locDir -Filter *.yml -ErrorAction SilentlyContinue)) {
+            foreach ($line in (Get-Content $f.FullName -ErrorAction SilentlyContinue)) {
+                if ($line -match '^\s*([A-Za-z0-9_.-]+):\d*\s+"(.*)"') { $loc[$Matches[1]] = $Matches[2] }
+            }
+        }
+    }
+    $focusDir = Join-Path $root 'common\national_focus'
+    if (Test-Path -LiteralPath $focusDir) {
+        $seen = @{}
+        foreach ($f in (Get-ChildItem $focusDir -Filter *.txt -ErrorAction SilentlyContinue)) {
+            $text = Get-Content $f.FullName -Raw -ErrorAction SilentlyContinue
+            if (-not $text) { continue }
+            $head = $text.Substring(0, [Math]::Min(3000, $text.Length))
+            if ($head -notmatch 'focus_tree\s*=\s*\{' -or $head -notmatch "tag\s*=\s*$tag") { continue }
+            foreach ($m in [regex]::Matches($text, "(?m)^\s*id\s*=\s*($tag_[A-Za-z0-9_]+)\s*$")) {
+                $id = $m.Groups[1].Value
+                if ($seen.ContainsKey($id)) { continue }
+                $seen[$id] = $true
+                $name = if ($loc.ContainsKey($id)) { $loc[$id] } else { $id }
+                [void]$choices.Add([pscustomobject]@{ id = $id; name = $name; display = "$name · $id" })
+            }
+        }
+    }
+    $result = @($choices | Sort-Object name)
+    $script:focusChoiceCache[$tag] = $result
+    return $result
+}
+
 function Show-AdvisorContextDialog {
     $ctx = Get-AdvisorContext
     $dialog = New-Object System.Windows.Forms.Form
     $dialog.Text = '参谋资料'
-    $dialog.ClientSize = New-Object Drawing.Size(660, 660)
+    $dialog.ClientSize = New-Object Drawing.Size(660, 700)
     $dialog.StartPosition = 'CenterParent'
     $dialog.FormBorderStyle = 'FixedDialog'
     $dialog.MaximizeBox = $false
@@ -1811,23 +1849,32 @@ function Show-AdvisorContextDialog {
     $dialog.Controls.Add($title)
 
     $sub = New-Object System.Windows.Forms.Label
-    $sub.Text = '这些资料只对本局玩家国生效，会随本局保存。'
+    $sub.Text = '都可以留空；只写一句也行。国策可从本国焦点树下拉，也可手写。'
     $sub.ForeColor = $UiMuted
     $sub.Location = New-Object Drawing.Point(26, 48)
     $sub.Size = New-Object Drawing.Size(600, 20)
     $dialog.Controls.Add($sub)
 
+    $playerState = $script:states[$script:player]
+    $playerLine = New-Object System.Windows.Forms.Label
+    $playerLine.Text = if ($playerState) { "当前玩家：$($script:player) · $($playerState.country)" } else { "当前玩家：$($script:player)（等待状态）" }
+    $playerLine.ForeColor = $UiCyan
+    $playerLine.Location = New-Object Drawing.Point(26, 72)
+    $playerLine.Size = New-Object Drawing.Size(600, 20)
+    $dialog.Controls.Add($playerLine)
+
     $defs = @(
-        @{ key = 'focus'; label = '国策：当前/已点/目标'; hint = '例如：正在走工业线，已点 4 个工业国策，下一步想转军事。' },
-        @{ key = 'research'; label = '科研：当前/下一项'; hint = '例如：正在研究 1939  infantry weapons，接下来想补工业。' },
-        @{ key = 'construction'; label = '建造：队列/优先'; hint = '例如：民用工厂 4 个，军工 2 个，接下来想补基建。' },
-        @{ key = 'production'; label = '生产：装备/缺口'; hint = '例如：步兵装备缺口 2k，支援装备不足，坦克线没开。' },
-        @{ key = 'army'; label = '编制/部队：主力/位置'; hint = '例如：主力 20 宽步兵，46 个师，集中在北部。' },
-        @{ key = 'politics'; label = '法律/顾问/政治'; hint = '例如：战时经济、总动员，顾问槽还空一个。' },
-        @{ key = 'goal'; label = '目标/约束：想打谁/怕谁'; hint = '例如：想打南斯拉夫，怕英国保独，1940 前不动。' }
+        @{ key = 'focus'; label = '国策/分支（可下拉，也可手写；可留空）' },
+        @{ key = 'research'; label = '科研（可留空）' },
+        @{ key = 'construction'; label = '建造（可留空）' },
+        @{ key = 'production'; label = '生产（可留空）' },
+        @{ key = 'army'; label = '编制/部队（可留空）' },
+        @{ key = 'politics'; label = '法律/顾问/政治（可留空）' },
+        @{ key = 'goal'; label = '目标/约束（可留空）' }
     )
+    $focusChoices = Get-FocusChoices $script:player
     $boxes = @{}
-    $y = 78
+    $y = 104
     foreach ($def in $defs) {
         $lab = New-Object System.Windows.Forms.Label
         $lab.Text = $def.label
@@ -1836,25 +1883,40 @@ function Show-AdvisorContextDialog {
         $lab.Size = New-Object Drawing.Size(600, 18)
         $dialog.Controls.Add($lab)
 
-        $box = New-Object System.Windows.Forms.TextBox
-        $box.Multiline = $true
-        $box.ScrollBars = 'Vertical'
-        $box.AcceptsReturn = $true
-        $box.BackColor = $UiCard2
-        $box.ForeColor = $UiText
-        $box.BorderStyle = 'FixedSingle'
-        $box.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
-        $box.Location = New-Object Drawing.Point(26, ($y + 20))
-        $box.Size = New-Object Drawing.Size(600, 48)
-        $box.Text = [string]$ctx.($def.key)
-        $dialog.Controls.Add($box)
+        if ($def.key -eq 'focus') {
+            $box = New-Object System.Windows.Forms.ComboBox
+            $box.DropDownStyle = 'DropDown'
+            $box.AutoCompleteMode = 'SuggestAppend'
+            $box.AutoCompleteSource = 'ListItems'
+            $box.BackColor = $UiCard2
+            $box.ForeColor = $UiText
+            $box.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
+            $box.Location = New-Object Drawing.Point(26, ($y + 20))
+            $box.Size = New-Object Drawing.Size(600, 26)
+            foreach ($choice in $focusChoices) { [void]$box.Items.Add($choice.display) }
+            $box.Text = [string]$ctx.focus
+            $dialog.Controls.Add($box)
+        } else {
+            $box = New-Object System.Windows.Forms.TextBox
+            $box.Multiline = $true
+            $box.ScrollBars = 'Vertical'
+            $box.AcceptsReturn = $true
+            $box.BackColor = $UiCard2
+            $box.ForeColor = $UiText
+            $box.BorderStyle = 'FixedSingle'
+            $box.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
+            $box.Location = New-Object Drawing.Point(26, ($y + 20))
+            $box.Size = New-Object Drawing.Size(600, 48)
+            $box.Text = [string]$ctx.($def.key)
+            $dialog.Controls.Add($box)
+        }
         $boxes[$def.key] = $box
         $y += 76
     }
 
     $save = New-Object System.Windows.Forms.Button
     $save.Text = '保存资料'
-    $save.Location = New-Object Drawing.Point(24, 610)
+    $save.Location = New-Object Drawing.Point(24, 650)
     $save.Size = New-Object Drawing.Size(120, 36)
     $save.FlatStyle = 'Flat'
     $save.BackColor = $UiBlue
@@ -1870,7 +1932,7 @@ function Show-AdvisorContextDialog {
 
     $cancel = New-Object System.Windows.Forms.Button
     $cancel.Text = '取消'
-    $cancel.Location = New-Object Drawing.Point(158, 610)
+    $cancel.Location = New-Object Drawing.Point(158, 650)
     $cancel.Size = New-Object Drawing.Size(100, 36)
     $cancel.FlatStyle = 'Flat'
     $cancel.BackColor = $UiCard
@@ -2595,6 +2657,7 @@ $script:guaranteedBy = @{}
 $script:enemies = @{}
 $script:logPos = 0
 $script:advisorMode = $false
+$script:focusChoiceCache = @{}
 $script:cfg = Read-Config
 $script:player = if ($script:cfg.player_override) { [string]$script:cfg.player_override } else { Detect-Player }
 if (-not $script:player) { $script:player = 'GER' }
