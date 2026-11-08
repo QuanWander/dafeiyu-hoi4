@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.5 — 2026-11-08
+
+- 修复 mod 的无效 effect `any_enemy_country`，它导致整个效果文件加载失败、`DFY|state` 完全消失、AI 下拉为空。
+- 敌国日志改用 `every_country` + `has_war_with = ROOT`。
+- 修完后需重开游戏，等一周，AI 列表才会恢复。
+
 ## v0.9.4 — 2026-11-08
 
 - 阵营日志新增 `DFY|faction_leader`。

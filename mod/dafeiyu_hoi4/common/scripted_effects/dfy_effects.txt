@@ -1,4 +1,4 @@
-﻿dfy_log_state = {
+dfy_log_state = {
 	set_temp_variable = { dfy_civ = num_of_civilian_factories }
 	set_temp_variable = { dfy_mil = num_of_military_factories }
 	set_temp_variable = { dfy_dock = num_of_naval_factories }
@@ -51,8 +51,11 @@ dfy_log_relations = {
 			log = "DFY|guaranteed_by|tag=[ROOT.GetTag]|by=[THIS.GetTag]"
 		}
 	}
-	any_enemy_country = {
-		log = "DFY|enemy|tag=[ROOT.GetTag]|enemy=[THIS.GetTag]"
+	every_country = {
+		if = {
+			limit = { has_war_with = ROOT }
+			log = "DFY|enemy|tag=[ROOT.GetTag]|enemy=[THIS.GetTag]"
+		}
 	}
 }
 
