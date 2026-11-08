@@ -6,7 +6,8 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.13'
+$AdvisorFile = Join-Path $AppData 'advisor.json'
+$script:appVersion = '0.9.14'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -435,6 +436,59 @@ function Set-Ledger([string]$tag, $ledger) {
     $key = "$script:campaignKey|$tag|ledger"
     $script:memory | Add-Member -NotePropertyName $key -NotePropertyValue @($ledger) -Force
     Save-Memory $script:memory
+}
+
+function Get-AdvisorKey {
+    return "$script:campaignKey|$script:player"
+}
+
+function Get-AdvisorStore {
+    if ($script:advisorStore) { return $script:advisorStore }
+    $store = @{}
+    if (Test-Path -LiteralPath $AdvisorFile) {
+        try {
+            $data = Get-Content -LiteralPath $AdvisorFile -Raw | ConvertFrom-Json
+            if ($data) {
+                foreach ($prop in $data.PSObject.Properties) { $store[$prop.Name] = $prop.Value }
+            }
+        } catch {}
+    }
+    $script:advisorStore = $store
+    return $store
+}
+
+function Get-AdvisorContext {
+    $store = Get-AdvisorStore
+    $key = Get-AdvisorKey
+    if ($store.ContainsKey($key)) { return $store[$key] }
+    return [pscustomobject]@{}
+}
+
+function Save-AdvisorContext($ctx) {
+    $store = Get-AdvisorStore
+    $store[(Get-AdvisorKey)] = $ctx
+    $script:advisorStore = $store
+    try { $store | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $AdvisorFile -Encoding UTF8 } catch {}
+}
+
+function Get-AdvisorContextText {
+    $ctx = Get-AdvisorContext
+    $fields = @(
+        @{ key = 'focus'; label = '国策' },
+        @{ key = 'research'; label = '科研' },
+        @{ key = 'construction'; label = '建造' },
+        @{ key = 'production'; label = '生产' },
+        @{ key = 'army'; label = '编制/部队' },
+        @{ key = 'politics'; label = '法律/顾问/政治' },
+        @{ key = 'goal'; label = '目标/约束' }
+    )
+    $lines = @()
+    foreach ($f in $fields) {
+        $v = [string]$ctx.($f.key)
+        if ($v.Trim()) { $lines += "- $($f.label)：$($v.Trim())" }
+    }
+    if ($lines.Count -eq 0) { return '暂无；信息不足时先问玩家。' }
+    return ($lines -join "`n")
 }
 
 function Load-Actions {
@@ -1083,6 +1137,7 @@ function Update-Controls {
     $comboAI.Enabled = -not $script:advisorMode
     $lblAI.Text = if ($script:advisorMode) { '同国参谋' } else { 'AI 国家' }
     $btnActions.Enabled = -not $script:advisorMode
+    $btnAdvisorInfo.Visible = $script:advisorMode
     $items = @($comboAI.Items | ForEach-Object { ([string]$_).Substring(0, 3) })
     if (($tags -join ',') -ne ($items -join ',')) {
         $current = Get-SelectedTag
@@ -1733,6 +1788,100 @@ function Get-ActionCommand([string]$id, [string]$aiTag, [string]$target = '', [s
     return $command
 }
 
+function Show-AdvisorContextDialog {
+    $ctx = Get-AdvisorContext
+    $dialog = New-Object System.Windows.Forms.Form
+    $dialog.Text = '参谋资料'
+    $dialog.ClientSize = New-Object Drawing.Size(660, 660)
+    $dialog.StartPosition = 'CenterParent'
+    $dialog.FormBorderStyle = 'FixedDialog'
+    $dialog.MaximizeBox = $false
+    $dialog.MinimizeBox = $false
+    $dialog.BackColor = $UiBg
+    Add-DreamBackground $dialog ([Drawing.Color]::FromArgb(38, 29, 66)) ([Drawing.Color]::FromArgb(22, 18, 38))
+    $dialog.ForeColor = $UiText
+    $dialog.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
+
+    $title = New-Object System.Windows.Forms.Label
+    $title.Text = '给大肥鱼的参谋资料'
+    $title.Font = New-Object Drawing.Font('Microsoft YaHei UI', 16, [Drawing.FontStyle]::Bold)
+    $title.ForeColor = $UiText
+    $title.Location = New-Object Drawing.Point(24, 16)
+    $title.Size = New-Object Drawing.Size(600, 32)
+    $dialog.Controls.Add($title)
+
+    $sub = New-Object System.Windows.Forms.Label
+    $sub.Text = '这些资料只对本局玩家国生效，会随本局保存。'
+    $sub.ForeColor = $UiMuted
+    $sub.Location = New-Object Drawing.Point(26, 48)
+    $sub.Size = New-Object Drawing.Size(600, 20)
+    $dialog.Controls.Add($sub)
+
+    $defs = @(
+        @{ key = 'focus'; label = '国策：当前/已点/目标'; hint = '例如：正在走工业线，已点 4 个工业国策，下一步想转军事。' },
+        @{ key = 'research'; label = '科研：当前/下一项'; hint = '例如：正在研究 1939  infantry weapons，接下来想补工业。' },
+        @{ key = 'construction'; label = '建造：队列/优先'; hint = '例如：民用工厂 4 个，军工 2 个，接下来想补基建。' },
+        @{ key = 'production'; label = '生产：装备/缺口'; hint = '例如：步兵装备缺口 2k，支援装备不足，坦克线没开。' },
+        @{ key = 'army'; label = '编制/部队：主力/位置'; hint = '例如：主力 20 宽步兵，46 个师，集中在北部。' },
+        @{ key = 'politics'; label = '法律/顾问/政治'; hint = '例如：战时经济、总动员，顾问槽还空一个。' },
+        @{ key = 'goal'; label = '目标/约束：想打谁/怕谁'; hint = '例如：想打南斯拉夫，怕英国保独，1940 前不动。' }
+    )
+    $boxes = @{}
+    $y = 78
+    foreach ($def in $defs) {
+        $lab = New-Object System.Windows.Forms.Label
+        $lab.Text = $def.label
+        $lab.ForeColor = $UiMuted
+        $lab.Location = New-Object Drawing.Point(26, $y)
+        $lab.Size = New-Object Drawing.Size(600, 18)
+        $dialog.Controls.Add($lab)
+
+        $box = New-Object System.Windows.Forms.TextBox
+        $box.Multiline = $true
+        $box.ScrollBars = 'Vertical'
+        $box.AcceptsReturn = $true
+        $box.BackColor = $UiCard2
+        $box.ForeColor = $UiText
+        $box.BorderStyle = 'FixedSingle'
+        $box.Font = New-Object Drawing.Font('Microsoft YaHei UI', 9)
+        $box.Location = New-Object Drawing.Point(26, ($y + 20))
+        $box.Size = New-Object Drawing.Size(600, 48)
+        $box.Text = [string]$ctx.($def.key)
+        $dialog.Controls.Add($box)
+        $boxes[$def.key] = $box
+        $y += 76
+    }
+
+    $save = New-Object System.Windows.Forms.Button
+    $save.Text = '保存资料'
+    $save.Location = New-Object Drawing.Point(24, 610)
+    $save.Size = New-Object Drawing.Size(120, 36)
+    $save.FlatStyle = 'Flat'
+    $save.BackColor = $UiBlue
+    $save.ForeColor = [Drawing.Color]::White
+    $save.Add_Click({
+        $new = @{}
+        foreach ($k in $boxes.Keys) { $new[$k] = [string]$boxes[$k].Text.Trim() }
+        Save-AdvisorContext ([pscustomobject]$new)
+        $lblStatus.Text = '参谋资料已保存，本局对话会使用它。'
+        $dialog.Close()
+    })
+    $dialog.Controls.Add($save)
+
+    $cancel = New-Object System.Windows.Forms.Button
+    $cancel.Text = '取消'
+    $cancel.Location = New-Object Drawing.Point(158, 610)
+    $cancel.Size = New-Object Drawing.Size(100, 36)
+    $cancel.FlatStyle = 'Flat'
+    $cancel.BackColor = $UiCard
+    $cancel.ForeColor = $UiText
+    $cancel.DialogResult = 'Cancel'
+    $dialog.Controls.Add($cancel)
+    $dialog.CancelButton = $cancel
+
+    [void]$dialog.ShowDialog()
+}
+
 function Show-ActionPicker {
     $tag = Get-SelectedTag
     if (-not $tag) {
@@ -2339,6 +2488,7 @@ function Send-Chat {
         $aiActionText = $aiActionLines -join "`n"
     }
     if ($script:advisorMode) {
+        $contextText = Get-AdvisorContextText
         $system = @"
 你是《钢铁雄心4》玩家国家 $($state.country)（$tag）的总参谋/国务顾问，不是敌国，也不是另一个玩家。玩家就是 $($script:player)，本局是「$($script:campaignTitle)」。
 
@@ -2347,6 +2497,8 @@ function Send-Chat {
 本局摘要：$summary
 已知承诺：
 $ledgerText
+玩家补充的国策/内政资料：
+$contextText
 
 要求：
 - 用中文，以玩家国参谋身份说话，给建议而不是替玩家做决定；
@@ -2709,11 +2861,18 @@ $btnCopyChat.BringToFront()
 $btnAdvisor = New-FlatButton '同国参谋' 812 48 108 26 $UiCard
 $form.Controls.Add($btnAdvisor)
 $btnAdvisor.BringToFront()
+
+$btnAdvisorInfo = New-FlatButton '资料' 736 48 64 26 $UiCard
+$btnAdvisorInfo.Visible = $false
+$form.Controls.Add($btnAdvisorInfo)
+$btnAdvisorInfo.BringToFront()
+$btnAdvisorInfo.Add_Click({ Show-AdvisorContextDialog })
 $btnAdvisor.Add_Click({
     $script:advisorMode = -not $script:advisorMode
     if ($script:advisorMode) {
         $btnAdvisor.Text = '参谋模式：开'
         $btnAdvisor.BackColor = [Drawing.Color]::FromArgb(58, 92, 112)
+        $btnAdvisorInfo.Visible = $true
         $lblAI.Text = '同国参谋'
         $lblChatTitle.Text = '同国参谋'
         $lblChatSub.Text = '大肥鱼看你的国家，给建议，不替你操作'
@@ -2731,6 +2890,7 @@ $btnAdvisor.Add_Click({
     } else {
         $btnAdvisor.Text = '同国参谋'
         $btnAdvisor.BackColor = $UiCard
+        $btnAdvisorInfo.Visible = $false
         $lblAI.Text = 'AI 国家'
         $lblChatTitle.Text = 'AI 国家'
         $lblChatSub.Text = '一个国家的耳语'
