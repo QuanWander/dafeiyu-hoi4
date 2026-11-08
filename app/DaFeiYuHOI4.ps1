@@ -6,7 +6,7 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.11'
+$script:appVersion = '0.9.12'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -1939,6 +1939,14 @@ function Show-ActionPicker {
         }
         if ($id -eq 'join_faction' -and -not (Get-PlayerFactionLeader)) {
             $desc.Text += ' 注意：你当前不在阵营，无法让 AI 加入你。'
+        }
+        if ($id -eq 'join_faction') {
+            $playerLeader = Get-PlayerFactionLeader
+            if ($playerLeader -and $tag -eq $playerLeader) {
+                $desc.Text += ' 注意：这个 AI 就是你所在阵营的领袖，不能加入自己。'
+            } elseif ($playerLeader -and (@($script:factionMembers[$playerLeader]) -contains $tag)) {
+                $desc.Text += ' 注意：这个 AI 已经在你的阵营。'
+            }
         }
         if ($id -eq 'force_faction' -and $targetTag -and $script:states[$targetTag] -and $script:states[$targetTag].faction -eq '1') {
             $desc.Text += ' 注意：目标已在阵营，通常不会转入另一个阵营。'
