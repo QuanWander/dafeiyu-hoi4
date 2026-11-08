@@ -6,7 +6,7 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.8'
+$script:appVersion = '0.9.9'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -82,10 +82,10 @@ eval_effect ENG = { add_to_faction = GER }
 · 自动复制；
 · 给你三步指引。
 
-现在指令库分 10 类、51 条：
+现在指令库分 10 类、50 条：
 · 下单窗口先选类别，默认“常用”只放 10 条；
 · 外交：结盟、保障、宣战、白和；
-· 阵营：退出、踢人、解散、创建、改名、当领袖；
+· 阵营：退出、踢人、解散、改名、当领袖；
 · 经济：民用工厂、军工、船坞、基础设施；
 · 科研：科研槽；
 · 政治：政治点、稳定度、战争支持度；
@@ -200,7 +200,7 @@ A：游戏本身不支持；换国请新开档。
 · 主界面常驻“帮助”按钮；
 · 游戏内指令、行动验证、记忆、隐私、卸载都有说明；
 · 帮助内容跟随版本更新，本页就是当前版；
-· 行动扩到 51 条：外交/阵营/经济/科研/政治/军事/强制/对玩家/国家；
+· 行动扩到 50 条：外交/阵营/经济/科研/政治/军事/强制/对玩家/国家；
 · 下单窗口改成“先选类别，再选指令”，默认常用 10 条；
 · 玩家可主动下令，不必等 AI 同意；高风险标红；
 · 新增强制附庸/吞并/拉阵营/退阵营/通行，极高风险二次确认；

@@ -1,4 +1,4 @@
-$script:actionDefs = [ordered]@{
+﻿$script:actionDefs = [ordered]@{
     'join_faction' = @{
         Name = '加入你的阵营'
         Category = '外交'
@@ -42,15 +42,6 @@ $script:actionDefs = [ordered]@{
         Category = '阵营 · 高风险'
         Desc = '让 AI 解散自己所在/领导的阵营。高风险：所有成员都会失去阵营。'
         Command = 'effect {0} dismantle_faction = yes'
-        Risk = 'high'
-        AiSuggest = $false
-        Verify = ''
-    }
-    'create_faction' = @{
-        Name = '让 AI 创建阵营'
-        Category = '阵营 · 高风险'
-        Desc = '让 AI 创建一个默认名为“大肥鱼阵营”的阵营。HOI4 这里需要本地化 key，不是中文名。'
-        Command = 'effect {0} create_faction = DFY_NEW_FACTION'
         Risk = 'high'
         AiSuggest = $false
         Verify = ''
