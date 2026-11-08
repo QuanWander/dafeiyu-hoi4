@@ -1,4 +1,4 @@
-﻿# DaFeiYu HOI4 v0.9.9
+﻿# DaFeiYu HOI4 v0.9.10
 
 独立项目，不依赖 NationMind。
 

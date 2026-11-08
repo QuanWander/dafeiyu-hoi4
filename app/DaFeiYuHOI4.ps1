@@ -6,7 +6,7 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.9'
+$script:appVersion = '0.9.10'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -1644,6 +1644,7 @@ function Get-ActionDef([string]$id) {
 }
 
 function Get-PlayerFactionLeader {
+    if ($script:states.ContainsKey($script:player) -and $script:states[$script:player].faction -ne '1') { return $null }
     foreach ($leader in @($script:factionLeaders.Keys)) {
         if (@($script:factionMembers[$leader]) -contains $script:player) { return $leader }
     }
@@ -1692,7 +1693,10 @@ function Get-ActionCommand([string]$id, [string]$aiTag, [string]$target = '', [s
     $command = [string]$def.Command
     $scopePlayer = $script:player
     $scopeAi = $aiTag
-    if ($id -eq 'join_faction') { $scopePlayer = Get-PlayerFactionLeader }
+    if ($id -eq 'join_faction') {
+        $scopePlayer = Get-PlayerFactionLeader
+        if (-not $scopePlayer) { return $null }
+    }
     if ($id -in @('force_faction', 'player_join_ai_faction')) { $scopeAi = Get-FactionLeaderForTag $aiTag }
     $command = $command.Replace('{0}', $scopeAi).Replace('{1}', [string]$scopePlayer).Replace('{2}', $targetTag).Replace('{3}', $amountText).Replace('{4}', [string]$text)
     if ($command -match '^effect\s+([A-Z0-9]{3})\s+(.+)$') {
@@ -1929,6 +1933,16 @@ function Show-ActionPicker {
         }
         $targetTag = ''
         if ($def.NeedsTarget -and $target.SelectedItem) { $targetTag = (([string]$target.SelectedItem) -split ' · ')[0] }
+        $aiState = $script:states[$tag]
+        if ($aiState -and $aiState.faction -ne '1' -and $id -in @('force_faction', 'remove_from_faction', 'dismantle_faction', 'rename_faction', 'faction_leader_self')) {
+            $desc.Text += ' 注意：当前 AI 不在阵营，这条不会生效。'
+        }
+        if ($id -eq 'join_faction' -and -not (Get-PlayerFactionLeader)) {
+            $desc.Text += ' 注意：你当前不在阵营，无法让 AI 加入你。'
+        }
+        if ($id -eq 'force_faction' -and $targetTag -and $script:states[$targetTag] -and $script:states[$targetTag].faction -eq '1') {
+            $desc.Text += ' 注意：目标已在阵营，通常不会转入另一个阵营。'
+        }
         $amountText = ''
         if ($def.NeedsAmount) { $amountText = $amountBox.Value.ToString([Globalization.CultureInfo]::InvariantCulture) }
         $textValue = if ($def.NeedsText -and $tb) { $tb.Text.Trim() } else { '' }

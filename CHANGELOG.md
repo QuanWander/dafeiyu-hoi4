@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.9.10 — 2026-11-08
+
+- mod 的 `on_actions` 现在也记录**玩家国家**的 state/relations，不再只记录 AI。
+- 玩家不在阵营时，“加入你的阵营”不再生成 `add_to_faction = ITA` 的无效命令，而是提示“你当前不在阵营”。
+- 阵营类行动增加前置提示：AI 不在阵营、目标已在阵营时，直接说明这条不会生效。
+- 修复 `on_actions` 的 CRLF 行尾，避免影响加载。
+
 ## v0.9.9 — 2026-11-08
 
 - 移除“让 AI 创建阵营”：HOI4 的 `create_faction` 依赖模板/Deeper Factions，缺少模板时只是壳子，已删掉，不再假装可用。
