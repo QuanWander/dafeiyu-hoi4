@@ -1,4 +1,4 @@
-﻿$script:actionDefs = [ordered]@{
+$script:actionDefs = [ordered]@{
     'join_faction' = @{
         Name = '加入你的阵营'
         Category = '外交'
@@ -18,10 +18,65 @@
         Verify = 'guarantee'
     }
     'leave_faction' = @{
-        Name = '退出当前阵营'
-        Category = '外交 · 高风险'
+        Name = '让 AI 退出阵营'
+        Category = '阵营 · 高风险'
         Desc = '让 AI 国家退出它现在的阵营。高风险：可能直接改变战争格局。'
         Command = 'effect {0} leave_faction = yes'
+        Risk = 'high'
+        AiSuggest = $false
+        Verify = ''
+    }
+    'remove_from_faction' = @{
+        Name = '把目标踢出 AI 阵营'
+        Category = '阵营 · 高风险'
+        Desc = '把目标国家从 AI 所在阵营踢出去。AI 必须是阵营领袖。'
+        Command = 'effect {0} remove_from_faction = {2}'
+        NeedsTarget = $true
+        TargetDefault = 'none'
+        Risk = 'high'
+        AiSuggest = $false
+        Verify = ''
+    }
+    'dismantle_faction' = @{
+        Name = '解散 AI 阵营'
+        Category = '阵营 · 高风险'
+        Desc = '让 AI 解散自己所在/领导的阵营。高风险：所有成员都会失去阵营。'
+        Command = 'effect {0} dismantle_faction = yes'
+        Risk = 'high'
+        AiSuggest = $false
+        Verify = ''
+    }
+    'create_faction' = @{
+        Name = '让 AI 创建阵营'
+        Category = '阵营 · 高风险'
+        Desc = '让 AI 创建一个新阵营。需要填阵营名称；AI 必须是独立国家。'
+        Command = 'effect {0} create_faction = "{4}"'
+        NeedsText = $true
+        TextLabel = '阵营名称'
+        TextPlaceholder = '例如 Rome Pact'
+        TextPattern = '^[^"]{1,40}$'
+        Risk = 'high'
+        AiSuggest = $false
+        Verify = ''
+    }
+    'rename_faction' = @{
+        Name = '重命名 AI 阵营'
+        Category = '阵营 · 高级'
+        Desc = '给 AI 所在阵营改名字。需要填新名称；AI 必须是阵营领袖。'
+        Command = 'effect {0} set_faction_name = "{4}"'
+        NeedsText = $true
+        TextLabel = '新阵营名'
+        TextPlaceholder = '例如 New Axis'
+        TextPattern = '^[^"]{1,40}$'
+        Risk = 'medium'
+        AiSuggest = $false
+        Verify = ''
+    }
+    'faction_leader_self' = @{
+        Name = '让 AI 当阵营领袖'
+        Category = '阵营 · 高风险'
+        Desc = '让 AI 夺取自己阵营的领袖位置。高风险：会改变阵营控制权。'
+        Command = 'effect {0} set_faction_leader = yes'
         Risk = 'high'
         AiSuggest = $false
         Verify = ''

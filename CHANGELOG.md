@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.9.7 — 2026-11-08
+
+- 新增“阵营”类别 6 条：
+  - 让 AI 退出阵营；
+  - 把目标踢出 AI 阵营；
+  - 解散 AI 阵营；
+  - 让 AI 创建阵营（填名称）；
+  - 重命名 AI 阵营（填名称）；
+  - 让 AI 当阵营领袖（共 6 条，51 条总数）。
+- `remove_from_faction`、`dismantle_faction`、`create_faction`、`set_faction_name`、`set_faction_leader` 均走 `eval_effect`。
+- 创建/改名需要手填名称，输入框已有校验。
+
 ## v0.9.6 — 2026-11-08
 
 - “强制目标加入 AI 阵营”和“邀请玩家加入 AI 阵营”自动改用 AI 所在阵营的**领袖**：
