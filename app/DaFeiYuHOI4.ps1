@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.20'
+$script:appVersion = '0.9.21'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -2204,12 +2204,16 @@ function Show-ActionPicker {
     $dialog.Controls.Add($cancel)
     $dialog.CancelButton = $cancel
 
+    $script:lastActionDetailKey = [guid]::NewGuid().ToString()
     $updateDetail = {
         $ids = @($combo.Tag)
         $index = $combo.SelectedIndex
         if ($index -lt 0 -or $index -ge $ids.Count) { return }
         $id = $ids[$index]
         $def = $script:actionDefs[$id]
+        $detailKey = "$([string]$category.SelectedItem)|$id"
+        $resetFields = ($script:lastActionDetailKey -ne $detailKey)
+        $script:lastActionDetailKey = $detailKey
         $desc.Text = $def.Desc
         $risk.Text = if ($def.Risk -eq 'extreme') { '极高风险：会永久改变存档，建议先备份' } elseif ($def.Risk -eq 'high') { '高风险：会直接改变外交/战争状态' } elseif ($def.Risk -eq 'medium') { '中风险：会明显增强 AI' } else { '低风险：常规支援' }
         $risk.ForeColor = if ($def.Risk -in @('high', 'extreme')) { $UiRed } elseif ($def.Risk -eq 'medium') { [Drawing.Color]::FromArgb(190, 150, 95) } else { $UiGreen }
@@ -2223,10 +2227,10 @@ function Show-ActionPicker {
             $tb.Visible = [bool]$def.NeedsText
             if ($def.NeedsText) {
                 $textLabel.Text = "$($def.TextLabel)  $($def.TextPlaceholder)"
-                if ([string]$tb.Text -ne [string]$def.TextDefault) { $tb.Text = [string]$def.TextDefault }
+                if ($resetFields -and [string]$tb.Text -ne [string]$def.TextDefault) { $tb.Text = [string]$def.TextDefault }
             }
         }
-        if ($def.NeedsTarget) {
+        if ($def.NeedsTarget -and $resetFields) {
             $target.SelectedIndex = -1
             $default = if ($def.TargetDefault -eq 'player') { $script:player } else { $def.TargetDefault }
             if ($default -and $default -ne 'none') {
@@ -2235,7 +2239,7 @@ function Show-ActionPicker {
                 }
             }
         }
-        if ($def.NeedsAmount) {
+        if ($def.NeedsAmount -and $resetFields) {
             $amountBox.DecimalPlaces = if ($def.Decimals) { [int]$def.Decimals } else { 0 }
             $amountBox.Minimum = [decimal]$def.MinAmount
             $amountBox.Maximum = [decimal]$def.MaxAmount
