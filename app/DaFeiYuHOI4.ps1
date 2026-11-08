@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.19'
+$script:appVersion = '0.9.20'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -2957,7 +2957,7 @@ $lblVersion.Size = New-Object Drawing.Size(256, 20)
 $sidebar.Controls.Add($lblVersion)
 
 $flag = New-Object System.Windows.Forms.Panel
-$flag.Location = New-Object Drawing.Point(322, 18)
+$flag.Location = New-Object Drawing.Point(376, 18)
 $flag.Size = New-Object Drawing.Size(44, 28)
 $flag.BackColor = $UiCard
 Set-Rounded $flag 6
