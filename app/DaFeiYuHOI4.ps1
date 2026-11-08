@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.18'
+$script:appVersion = '0.9.19'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -1248,7 +1248,7 @@ function Update-Controls {
     $game = [bool](Get-Process hoi4 -ErrorAction SilentlyContinue)
     $lblGame.Text = if ($game) { '● 游戏运行中' } else { '● 游戏未运行' }
     $lblGame.ForeColor = [Drawing.Color]::White
-    $lblGame.BackColor = if ($game) { [Drawing.Color]::FromArgb(74, 98, 82) } else { [Drawing.Color]::FromArgb(57, 44, 84) }
+    $lblGame.BackColor = if ($game) { [Drawing.Color]::FromArgb(74, 98, 82) } else { [Drawing.Color]::FromArgb(74, 98, 82) }
     $lblPlayer.Text = "你：$($script:player)" + $(if ($script:cfg.player_override) { ' · 手动' } else { '' })
     $lblCampaign.Text = "本局：$($script:campaignTitle)"
     $lblTokens.Text = "本次会话 tokens：$($script:tokens)"
@@ -2796,35 +2796,31 @@ $eyebrow = New-Object System.Windows.Forms.Label
 $eyebrow.Text = 'WHALE  &  IRON'
 $eyebrow.Font = New-Object Drawing.Font('Segoe UI', 7, [Drawing.FontStyle]::Bold)
 $eyebrow.ForeColor = [Drawing.Color]::FromArgb(181, 146, 94)
+$eyebrow.BackColor = [Drawing.Color]::Transparent
 $eyebrow.Location = New-Object Drawing.Point(94, 12)
 $eyebrow.Size = New-Object Drawing.Size(236, 16)
 $sidebar.Controls.Add($eyebrow)
 
-$title = New-Object System.Windows.Forms.Panel
-$title.Location = New-Object Drawing.Point(92, 28)
-$title.Size = New-Object Drawing.Size(236, 34)
-$title.BackColor = [Drawing.Color]::Transparent
-$title.Add_Paint({
-    param($s, $e)
-    $rect = New-Object Drawing.RectangleF(0, 0, $s.Width, $s.Height)
-    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush($rect, [Drawing.Color]::FromArgb(181, 146, 94), [Drawing.Color]::FromArgb(145, 168, 175), 0)
-    $font = New-Object Drawing.Font('Microsoft YaHei UI', 16, [Drawing.FontStyle]::Bold)
-    $format = New-Object Drawing.StringFormat
-    $format.LineAlignment = 'Center'
-    $e.Graphics.DrawString('大肥鱼 HOI4', $font, $brush, $rect, $format)
-    $format.Dispose(); $font.Dispose(); $brush.Dispose()
-})
-$sidebar.Controls.Add($title)
+$titleLabel = New-Object System.Windows.Forms.Label
+$titleLabel.Text = '大肥鱼 HOI4'
+$titleLabel.Font = New-Object Drawing.Font('Microsoft YaHei UI', 16, [Drawing.FontStyle]::Bold)
+$titleLabel.ForeColor = [Drawing.Color]::FromArgb(181, 146, 94)
+$titleLabel.BackColor = [Drawing.Color]::Transparent
+$titleLabel.AutoSize = $true
+$titleLabel.Location = New-Object Drawing.Point(92, 30)
+$titleLabel.TextAlign = 'MiddleLeft'
+$sidebar.Controls.Add($titleLabel)
 
 $subtitle = New-Object System.Windows.Forms.Label
 $subtitle.Text = '在钢铁与海浪之间，听一个国家说话'
 $subtitle.ForeColor = $UiMuted
-$subtitle.Location = New-Object Drawing.Point(94, 58)
+$subtitle.BackColor = [Drawing.Color]::Transparent
+$subtitle.Location = New-Object Drawing.Point(94, 66)
 $subtitle.Size = New-Object Drawing.Size(236, 18)
 $sidebar.Controls.Add($subtitle)
 
 $accent = New-Object System.Windows.Forms.Panel
-$accent.Location = New-Object Drawing.Point(98, 80)
+$accent.Location = New-Object Drawing.Point(98, 88)
 $accent.Size = New-Object Drawing.Size(46, 2)
 $accent.BackColor = [Drawing.Color]::FromArgb(181, 146, 94)
 $sidebar.Controls.Add($accent)
@@ -2843,7 +2839,7 @@ $sidebar.Controls.Add($btnPlayer)
 $lblGame = New-Object System.Windows.Forms.Label
 $lblGame.Text = '● 游戏未运行'
 $lblGame.ForeColor = $UiText
-$lblGame.BackColor = [Drawing.Color]::FromArgb(57, 44, 84)
+$lblGame.BackColor = [Drawing.Color]::FromArgb(74, 98, 82)
 $lblGame.TextAlign = 'MiddleCenter'
 $lblGame.Location = New-Object Drawing.Point(22, 128)
 $lblGame.Size = New-Object Drawing.Size(120, 22)
