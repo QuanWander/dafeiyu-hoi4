@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.6 — 2026-11-08
+
+- “强制目标加入 AI 阵营”和“邀请玩家加入 AI 阵营”自动改用 AI 所在阵营的**领袖**：
+  例如英国在德国阵营时，生成 `add_to_faction = GER`，不再错误写 `ENG`。
+- 单元测试：AI=ENG、阵营领袖=GER 时，force/player_join/join 都解析为 GER。
+
 ## v0.9.5 — 2026-11-08
 
 - 修复 mod 的无效 effect `any_enemy_country`，它导致整个效果文件加载失败、`DFY|state` 完全消失、AI 下拉为空。

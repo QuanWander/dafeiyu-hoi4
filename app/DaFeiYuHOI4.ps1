@@ -6,7 +6,7 @@ $KeyFile = Join-Path $AppData 'key.dat'
 $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
-$script:appVersion = '0.9.5'
+$script:appVersion = '0.9.6'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -1649,6 +1649,14 @@ function Get-PlayerFactionLeader {
     return $script:player
 }
 
+function Get-FactionLeaderForTag([string]$tag) {
+    if ($script:factionLeaders.ContainsKey($tag)) { return $tag }
+    foreach ($leader in @($script:factionLeaders.Keys)) {
+        if (@($script:factionMembers[$leader]) -contains $tag) { return $leader }
+    }
+    return $tag
+}
+
 function Get-ActionTextControl($dialog) {
     if (-not $dialog) { return $null }
     foreach ($control in $dialog.Controls) {
@@ -1682,8 +1690,10 @@ function Get-ActionCommand([string]$id, [string]$aiTag, [string]$target = '', [s
     }
     $command = [string]$def.Command
     $scopePlayer = $script:player
+    $scopeAi = $aiTag
     if ($id -eq 'join_faction') { $scopePlayer = Get-PlayerFactionLeader }
-    $command = $command.Replace('{0}', $aiTag).Replace('{1}', [string]$scopePlayer).Replace('{2}', $targetTag).Replace('{3}', $amountText).Replace('{4}', [string]$text)
+    if ($id -in @('force_faction', 'player_join_ai_faction')) { $scopeAi = Get-FactionLeaderForTag $aiTag }
+    $command = $command.Replace('{0}', $scopeAi).Replace('{1}', [string]$scopePlayer).Replace('{2}', $targetTag).Replace('{3}', $amountText).Replace('{4}', [string]$text)
     if ($command -match '^effect\s+([A-Z0-9]{3})\s+(.+)$') {
         $scopeTag = $matches[1]
         $body = $matches[2].Trim()
