@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.23'
+$script:appVersion = '0.9.24'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null

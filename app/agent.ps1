@@ -1,4 +1,4 @@
-﻿# DaFeiYu HOI4 agent loop: one-week planning, order file generation.
+# DaFeiYu HOI4 agent loop: one-week planning, order file generation.
 # P1: manual "托管一周" tick. No chat-path changes, no keyboard simulation.
 
 $script:AgentFile = Join-Path $AppData 'agent.json'
@@ -95,6 +95,21 @@ function Write-AgentOrders($commands) {
     return @($written)
 }
 
+function Get-AgentChatIntent([string]$tag) {
+    $history = @(Get-Memory $tag)
+    if ($history.Count -eq 0) { return '暂无最近对话。' }
+    $recent = $history | Select-Object -Last 6
+    $lines = @()
+    foreach ($m in $recent) {
+        $who = if ($m.role -eq 'user') { '玩家' } else { '大肥鱼' }
+        $text = ([string]$m.content).Trim()
+        if ($text.Length -gt 260) { $text = $text.Substring(0, 260) + '...' }
+        if ($text) { $lines += "$who：$text" }
+    }
+    if ($lines.Count -eq 0) { return '暂无最近对话。' }
+    return ($lines -join "`n")
+}
+
 function Invoke-AgentWeek {
     if (-not $script:key) {
         Show-Settings
@@ -113,6 +128,7 @@ function Invoke-AgentWeek {
     $notes = Get-AgentNotes $tag
     if (-not $notes) { $notes = '暂无长期笔记。' }
     $stateText = Get-AgentStateText $tag
+    $intent = Get-AgentChatIntent $tag
     $prompt = @"
 你是《钢铁雄心4》里正在玩 $tag 的玩家，不是外交官。玩家控制另一个国家，和你同局。
 你要为下一周做 1-6 个决定，优先配合玩家、稳住自己的国家和战争目标。
@@ -121,6 +137,9 @@ function Invoke-AgentWeek {
 $stateText
 长期笔记：
 $notes
+
+最近对话（玩家意愿；优先按这里的方向做事，但不要越权）：
+$intent
 
 只能从下面动作中选，不能编造动作：
 $allowed
