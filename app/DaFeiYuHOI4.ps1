@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '1.6.1'
+$script:appVersion = '1.6.2'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -3275,15 +3275,15 @@ $planTitle.Font = New-Object Drawing.Font('Microsoft YaHei UI', 10, [Drawing.Fon
 $planTitle.ForeColor = [Drawing.Color]::FromArgb(181, 146, 94)
 $planTitle.BackColor = [Drawing.Color]::Transparent
 $planTitle.Location = New-Object Drawing.Point(16, 8)
-$planTitle.Size = New-Object Drawing.Size(120, 20)
+$planTitle.Size = New-Object Drawing.Size(90, 20)
 $planPanel.Controls.Add($planTitle)
 
 $planGoal = New-Object System.Windows.Forms.Label
 $planGoal.Text = '愿景：等待计划'
 $planGoal.ForeColor = $UiText
 $planGoal.BackColor = [Drawing.Color]::Transparent
-$planGoal.Location = New-Object Drawing.Point(120, 8)
-$planGoal.Size = New-Object Drawing.Size(666, 20)
+$planGoal.Location = New-Object Drawing.Point(112, 8)
+$planGoal.Size = New-Object Drawing.Size(676, 20)
 $planPanel.Controls.Add($planGoal)
 
 $planFocus = New-Object System.Windows.Forms.Label

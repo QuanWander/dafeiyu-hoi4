@@ -6,7 +6,7 @@
 
 独立项目，不依赖 NationMind。
 
-**v1.6.1** · Windows 10/11 · PowerShell 5.1 + WinForms + 配套 mod
+**v1.6.2** · Windows 10/11 · PowerShell 5.1 + WinForms + 配套 mod
 
 ![主界面](docs/screenshot.png)
 
