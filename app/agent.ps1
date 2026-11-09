@@ -110,6 +110,13 @@ function Get-AgentChatIntent([string]$tag) {
     return ($lines -join "`n")
 }
 
+function Get-AgentRecentActions([string]$tag) {
+    $store = Get-AgentStore
+    $key = Get-AgentKey $tag
+    if (-not $store.ContainsKey($key)) { return @() }
+    return @($store[$key].actions | ForEach-Object { [string]$_.id })
+}
+
 function Invoke-AgentWeek {
     if (-not $script:key) {
         Show-Settings
@@ -127,6 +134,8 @@ function Invoke-AgentWeek {
     $allowed = Get-AgentActionList
     $notes = Get-AgentNotes $tag
     if (-not $notes) { $notes = '暂无长期笔记。' }
+    $recent = @(Get-AgentRecentActions $tag)
+    $recentText = if ($recent.Count) { $recent -join '、' } else { '无' }
     $stateText = Get-AgentStateText $tag
     $intent = Get-AgentChatIntent $tag
     $prompt = @"
@@ -137,6 +146,7 @@ function Invoke-AgentWeek {
 $stateText
 长期笔记：
 $notes
+上一轮已用动作：$recentText
 
 最近对话（玩家意愿；优先按这里的方向做事，但不要越权）：
 $intent
@@ -153,6 +163,7 @@ $allowed
 - 需要 target 的必须填真实国家代码；需要 amount 的填整数；需要 text 的按动作要求填；
 - 不要选高风险/强制动作；
 - 不要重复同一个动作刷次数；
+- 上一轮已用的 invest_* 本轮不要再选，换别的动作；
 - 你不自动执行；玩家会运行订单文件。
 "@
     $messages = @(
@@ -176,6 +187,7 @@ $allowed
             $def = $script:actionDefs[$id]
             if (-not $def.AiSuggest -or $def.Risk -in @('high', 'extreme')) { continue }
             if ($seen.ContainsKey($id)) { continue }
+            if ($id -like 'invest_*' -and $recent -contains $id) { continue }
             $target = ''
             if ($def.NeedsTarget) {
                 $target = ([string]$item.target).Trim().ToUpperInvariant()

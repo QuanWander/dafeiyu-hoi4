@@ -64,6 +64,17 @@ eval_effect ENG = { dfy_log_state = yes }
 
 如果 FRA 无自由军工槽：没有 action 日志，FRA 仍 8；这不是日志错误，是 effect 没执行。
 
+### v0.9.27 实测结果（2026-11-09 22:13）
+
+```text
+DFY|action|invest_mil|tag=FRA
+DFY|state|tag=FRA|...|mil=9
+DFY|state|tag=ENG|...|mil=15
+```
+
+FRA 军工 8→9，ENG 军工仍 15；tag 与实际工厂数一致。**invest_mil effect 通过。**
+
+
 
 
 ## 结论
