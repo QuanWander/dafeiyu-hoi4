@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.27 — 2026-11-09
+
+- 修正 v0.9.26 的日志 tag：嵌套州里 `ROOT.GetTag` 取到玩家国，不是目标国。
+- 四个投资 effect 改成：
+  1. 外层 `any_owned_controlled_state` 确认有自由槽；
+  2. 随机州加建筑；
+  3. 外层用 `THIS.GetTag` 记日志。
+- 没有自由槽就不写 action 日志；不会再假报。
+- `dfy_p1_fra_test.txt` 增加 FRA/ENG 两份 `dfy_log_state`，用于定位建筑加到谁。
+
 ## v0.9.26 — 2026-11-09
 
 - 修复投资 effect 的假日志：`invest_civ/mil/dock/infra` 的 `log` 原来写在随机州外面，即使没加到工厂也会记成功。

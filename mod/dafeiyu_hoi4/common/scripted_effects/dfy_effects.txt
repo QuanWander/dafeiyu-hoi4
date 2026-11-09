@@ -64,70 +64,110 @@ dfy_action_test = {
 }
 
 dfy_action_invest_civ = {
-	random_owned_controlled_state = {
+	if = {
 		limit = {
-			free_building_slots = {
-				building = industrial_complex
-				size > 0
+			any_owned_controlled_state = {
+				free_building_slots = {
+					building = industrial_complex
+					size > 0
+				}
 			}
 		}
-		add_building_construction = {
-			type = industrial_complex
-			level = 1
-			instant_build = yes
+		random_owned_controlled_state = {
+			limit = {
+				free_building_slots = {
+					building = industrial_complex
+					size > 0
+				}
+			}
+			add_building_construction = {
+				type = industrial_complex
+				level = 1
+				instant_build = yes
+			}
 		}
-		log = "DFY|action|invest_civ|tag=[ROOT.GetTag]"
+		log = "DFY|action|invest_civ|tag=[THIS.GetTag]"
 	}
 }
 
 dfy_action_invest_mil = {
-	random_owned_controlled_state = {
+	if = {
 		limit = {
-			free_building_slots = {
-				building = arms_factory
-				size > 0
+			any_owned_controlled_state = {
+				free_building_slots = {
+					building = arms_factory
+					size > 0
+				}
 			}
 		}
-		add_building_construction = {
-			type = arms_factory
-			level = 1
-			instant_build = yes
+		random_owned_controlled_state = {
+			limit = {
+				free_building_slots = {
+					building = arms_factory
+					size > 0
+				}
+			}
+			add_building_construction = {
+				type = arms_factory
+				level = 1
+				instant_build = yes
+			}
 		}
-		log = "DFY|action|invest_mil|tag=[ROOT.GetTag]"
+		log = "DFY|action|invest_mil|tag=[THIS.GetTag]"
 	}
 }
 
 
 dfy_action_invest_dock = {
-	random_owned_controlled_state = {
+	if = {
 		limit = {
-			free_building_slots = {
-				building = dockyard
-				size > 0
+			any_owned_controlled_state = {
+				free_building_slots = {
+					building = dockyard
+					size > 0
+				}
 			}
 		}
-		add_building_construction = {
-			type = dockyard
-			level = 1
-			instant_build = yes
+		random_owned_controlled_state = {
+			limit = {
+				free_building_slots = {
+					building = dockyard
+					size > 0
+				}
+			}
+			add_building_construction = {
+				type = dockyard
+				level = 1
+				instant_build = yes
+			}
 		}
-		log = "DFY|action|invest_dock|tag=[ROOT.GetTag]"
+		log = "DFY|action|invest_dock|tag=[THIS.GetTag]"
 	}
 }
 
 dfy_action_invest_infra = {
-	random_owned_controlled_state = {
+	if = {
 		limit = {
-			free_building_slots = {
-				building = infrastructure
-				size > 0
+			any_owned_controlled_state = {
+				free_building_slots = {
+					building = infrastructure
+					size > 0
+				}
 			}
 		}
-		add_building_construction = {
-			type = infrastructure
-			level = 1
-			instant_build = yes
+		random_owned_controlled_state = {
+			limit = {
+				free_building_slots = {
+					building = infrastructure
+					size > 0
+				}
+			}
+			add_building_construction = {
+				type = infrastructure
+				level = 1
+				instant_build = yes
+			}
 		}
-		log = "DFY|action|invest_infra|tag=[ROOT.GetTag]"
+		log = "DFY|action|invest_infra|tag=[THIS.GetTag]"
 	}
 }

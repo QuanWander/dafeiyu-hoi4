@@ -38,9 +38,9 @@ eval_effect ENG = { dfy_log_state = yes }
 
 英国政治点应 +2，日志出现 `DFY|state|tag=ENG|...`。
 
-## P1 effect 复测（v0.9.26）
+## P1 effect 复测（v0.9.27）
 
-旧版 FRA `invest_mil` 日志写了，但军工 8→8；已把日志移进实际加建筑的州。
+v0.9.26 的 `ROOT.GetTag` 嵌套后取到玩家国；v0.9.27 改成外层 `THIS.GetTag`，且先确认有自由槽。
 
 重启游戏后运行：
 
@@ -53,14 +53,16 @@ run dfy_p1_fra_test.txt
 ```text
 eval_effect FRA = { dfy_action_invest_mil = yes }
 eval_effect FRA = { dfy_log_state = yes }
+eval_effect ENG = { dfy_log_state = yes }
 ```
 
 通过：
 
-- `game.log` 出现 `DFY|action|invest_mil|tag=FRA`；
-- 同次/下一周 `DFY|state|tag=FRA|...|mil=9`（原 8）。
+- `DFY|action|invest_mil|tag=FRA`；
+- `DFY|state|tag=FRA|...|mil=9`（原 8）；
+- 不应出现 `invest_mil|tag=ENG`。
 
-如果只有 state、没有 action：说明 FRA 没有自由军工槽，effect 没执行，日志也不再假报。
+如果 FRA 无自由军工槽：没有 action 日志，FRA 仍 8；这不是日志错误，是 effect 没执行。
 
 
 
