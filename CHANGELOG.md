@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.9.31 — 2026-11-09
+
+- **软件自动执行打通**：修正 SendInput 的 32→40 字节 INPUT 结构，`SendInput` 返回 1。
+- 新增 `app/input.ps1`：前台切换（AttachThreadInput + Alt 解锁）+ 扫描码 + Unicode 输入。
+- 「托管一周」写完订单后自动：
+  1. 切 HOI4 前台；
+  2. 按 `~`；
+  3. 输入 `run dfy_orders.txt`；
+  4. 回车；
+  5. 关闭控制台。
+- 端到端实测成功，app 弹窗“软件已自动输入 run dfy_orders.txt”。
+- 前提：游戏必须 `-debug_mode`；控制台执行前必须关闭。
+- 失败回退 HID/手动；HID 仍保留。
+
 ## v0.9.30 — 2026-11-09
 
 - 新增 **硬件 HID 执行链**：

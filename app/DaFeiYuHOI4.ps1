@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.30'
+$script:appVersion = '0.9.31'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -32,6 +32,7 @@ $UiBubbleUser = [Drawing.Color]::FromArgb(82, 34, 30)
 . (Join-Path $PSScriptRoot 'actions.ps1')
 . (Join-Path $PSScriptRoot 'agent.ps1')
 . (Join-Path $PSScriptRoot 'hid.ps1')
+. (Join-Path $PSScriptRoot 'input.ps1')
 
 $script:helpSections = [ordered]@{
     '第一次使用' = @"
@@ -127,16 +128,20 @@ eval_effect ENG = { add_to_faction = GER }
 · 只从允许的低风险动作里选 ≤6 条；
 · 校验动作、目标、数值和命令前缀；
 · 写 dfy_orders.txt；
-· 复制 run dfy_orders.txt。
+· 自动切前台，按 ~ → run dfy_orders.txt → 回车 → ~。
+
+前提：
+· 游戏必须用 -debug_mode 启动（app 的“启动游戏”已带）；
+· 自动执行前控制台必须处于关闭状态（~ 是切换键）；
+· 软件执行失败会回退 HID/手动。
 
 它不做：
-· 不自动运行；
-· 不模拟键盘；
 · 不直接改游戏内存；
 · 不碰聊天路径。
 
 ### 执行
 
+默认全自动。若自动失败：
 1. 游戏里按 ~ 打开控制台；
 2. 粘贴 run dfy_orders.txt；
 3. 回车。
@@ -370,7 +375,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 }
 
 function Read-Config {
-    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true }
+    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true }
     if (Test-Path -LiteralPath $ConfigFile) {
         try {
             $saved = Get-Content -LiteralPath $ConfigFile -Raw | ConvertFrom-Json
@@ -380,6 +385,7 @@ function Read-Config {
             if ($saved.player_override) { $cfg.player_override = [string]$saved.player_override }
             if ($saved.hid_port) { $cfg.hid_port = [string]$saved.hid_port }
             if ($null -ne $saved.hid_auto) { $cfg.hid_auto = [bool]$saved.hid_auto }
+            if ($null -ne $saved.input_auto) { $cfg.input_auto = [bool]$saved.input_auto }
         } catch {}
     }
     return $cfg

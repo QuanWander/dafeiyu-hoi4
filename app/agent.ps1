@@ -223,15 +223,26 @@ $allowed
         }
         $commands = @($orders | ForEach-Object { $_.command })
         $files = Write-AgentOrders $commands
-        $hidText = '未检测到 HID 板，手动 run。'
-        if ($script:cfg.hid_auto) {
+        $autoDone = $false
+        $autoText = '未自动执行；手动 run。'
+        if ($script:cfg.input_auto -and (Test-DfyHoi4DebugMode)) {
+            try {
+                Invoke-DfyConsoleFile 'dfy_orders.txt'
+                $autoDone = $true
+                $autoText = '软件已自动输入 run dfy_orders.txt。'
+            } catch {
+                $autoText = "软件自动执行失败：$($_.Exception.Message)"
+            }
+        }
+        if (-not $autoDone -and $script:cfg.hid_auto) {
             $hidPort = Find-DfyHidPort
             if ($hidPort) {
                 try {
                     Invoke-DfyHidRun | Out-Null
-                    $hidText = "HID 已自动执行（$hidPort）。"
+                    $autoDone = $true
+                    $autoText = "HID 已自动执行（$hidPort）。"
                 } catch {
-                    $hidText = "HID 未执行：$($_.Exception.Message)；手动 run。"
+                    $autoText = "HID 未执行：$($_.Exception.Message)；手动 run。"
                 }
             }
         }
@@ -240,8 +251,8 @@ $allowed
         $report = if ($data.report) { [string]$data.report } else { '已生成订单。' }
         try { Set-Clipboard -Value 'run dfy_orders.txt' -ErrorAction Stop } catch { [Windows.Forms.Clipboard]::SetText('run dfy_orders.txt') }
         $fileText = if ($files.Count) { ($files -join '；') } else { '未能写入文件' }
-        $nextStep = if ($hidText -like 'HID 已自动执行*') { 'HID 已自动执行。' } else { '回游戏按 ~，粘贴 run dfy_orders.txt 执行；不自动运行。' }
-        Add-SystemBubble "托管一周：$report`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$hidText $nextStep" $UiCyan
+        $nextStep = if ($autoDone) { '' } else { '回游戏按 ~，粘贴 run dfy_orders.txt 执行；不自动运行。' }
+        Add-SystemBubble "托管一周：$report`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
         try {
             $line = "$(Get-Date -Format 's')`tweek`ttokens=$($result.Tokens)`tactions=$($orders.Count)`t$($commands -join ' || ')"
             Add-Content -LiteralPath $script:AgentLog -Value $line -Encoding UTF8

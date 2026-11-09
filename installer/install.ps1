@@ -4,6 +4,7 @@ $AppSource = Join-Path $Root 'app\DaFeiYuHOI4.ps1'
 $ActionsSource = Join-Path $Root 'app\actions.ps1'
 $AgentSource = Join-Path $Root 'app\agent.ps1'
 $HidSource = Join-Path $Root 'app\hid.ps1'
+$InputSource = Join-Path $Root 'app\input.ps1'
 $AssetSource = Join-Path $Root 'app\assets'
 $ModSource = Join-Path $Root 'mod\dafeiyu_hoi4'
 $ModDescriptor = Join-Path $Root 'mod\dafeiyu_hoi4.mod'
@@ -22,6 +23,7 @@ if (-not (Test-Path -LiteralPath $AppSource)) { throw "安装包不完整：找�
 if (-not (Test-Path -LiteralPath $ActionsSource)) { throw "安装包不完整：找不到 $ActionsSource" }
 if (-not (Test-Path -LiteralPath $AgentSource)) { throw "安装包不完整：找不到 $AgentSource" }
 if (-not (Test-Path -LiteralPath $HidSource)) { throw "安装包不完整：找不到 $HidSource" }
+if (-not (Test-Path -LiteralPath $InputSource)) { throw "安装包不完整：找不到 $InputSource" }
 if (-not (Test-Path -LiteralPath $ModSource)) { throw "安装包不完整：找不到 $ModSource" }
 
 Write-Host ''
@@ -48,6 +50,7 @@ Copy-Item -LiteralPath $AppSource -Destination (Join-Path $Target 'DaFeiYuHOI4.p
 Copy-Item -LiteralPath $ActionsSource -Destination (Join-Path $Target 'actions.ps1') -Force
 Copy-Item -LiteralPath $AgentSource -Destination (Join-Path $Target 'agent.ps1') -Force
 Copy-Item -LiteralPath $HidSource -Destination (Join-Path $Target 'hid.ps1') -Force
+Copy-Item -LiteralPath $InputSource -Destination (Join-Path $Target 'input.ps1') -Force
 if (Test-Path -LiteralPath $AssetSource) {
     $TargetAssets = Join-Path $Target 'assets'
     if (Test-Path -LiteralPath $TargetAssets) { Remove-Item -LiteralPath $TargetAssets -Recurse -Force }
