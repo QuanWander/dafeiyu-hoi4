@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '1.6.0'
+$script:appVersion = '1.6.1'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -1101,7 +1101,7 @@ function Add-Welcome {
     $card.Location = New-Object Drawing.Point(0, 0)
     $card.Size = New-Object Drawing.Size($row.Width, 194)
     $card.BackColor = [Drawing.Color]::FromArgb(38, 34, 29)
-    Set-Rounded $card 22
+    Add-SoftBorder $card ([Drawing.Color]::FromArgb(70, 181, 146, 94))
     $row.Controls.Add($card)
 
     $logoFrame = New-Object System.Windows.Forms.Panel
@@ -1194,6 +1194,7 @@ function Add-Welcome {
     }
 
     $row.Controls.Add($card)
+    Set-Rounded $card 22
     $chatPanel.Controls.Add($row)
     $chatPanel.ScrollControlIntoView($row)
 }
