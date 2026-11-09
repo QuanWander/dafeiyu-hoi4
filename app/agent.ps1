@@ -60,12 +60,17 @@ function Get-AgentStateText([string]$tag) {
 "@
 }
 
-function Get-AgentActionList {
+function Get-AgentActionList([bool]$forPlayer = $false) {
     $rows = @()
     foreach ($id in $script:actionDefs.Keys) {
         $d = $script:actionDefs[$id]
         if (-not $d.AiSuggest) { continue }
         if ($d.Risk -in @('high', 'extreme')) { continue }
+        if ($forPlayer) {
+            if ($d.Category -like '对玩家*') { continue }
+            if ($d.NeedsPlayer) { continue }
+            if ($d.Category -like '外交*') { continue }
+        }
         $args = @()
         if ($d.NeedsTarget) { $args += 'target=国家代码' }
         if ($d.NeedsAmount) { $args += "amount=$($d.DefaultAmount)（默认）" }
@@ -158,32 +163,40 @@ function Invoke-AgentWeek {
         if (-not $script:key) { return }
     }
     if ($script:advisorMode) {
-        [Windows.Forms.MessageBox]::Show('同国参谋模式不托管；切回 AI 国家模式再试。', '托管一周')
-        return
+        $tag = $script:player
+    } else {
+        $tag = Get-SelectedTag
     }
-    $tag = Get-SelectedTag
     if (-not $tag -or -not $script:states.ContainsKey($tag)) {
-        [Windows.Forms.MessageBox]::Show('还没有 AI 国家状态。先启动游戏，等一周。', '没有状态')
+        [Windows.Forms.MessageBox]::Show('还没有国家状态。先启动游戏，等一周。', '没有状态')
         return
     }
+    $forPlayer = [bool]$script:advisorMode
+    $weekTitle = if ($forPlayer) { '托管玩家一周' } else { '托管一周' }
     $stateDate = [string]$script:states[$tag].dateText
     $script:agentAutoLast = Get-Date
-    $allowed = Get-AgentActionList
+    $allowed = Get-AgentActionList $forPlayer
     $notes = Get-AgentNotes $tag
     if (-not $notes) { $notes = '暂无长期笔记。' }
     $recent = @(Get-AgentRecentActions $tag)
     $recentText = if ($recent.Count) { $recent -join '、' } else { '无' }
     $stateText = Get-AgentStateText $tag
     $intent = Get-AgentChatIntent $tag
+    $advisorContext = if ($forPlayer) { [string](Get-AdvisorContextText) } else { '' }
+    $persona = if ($forPlayer) {
+        "你是大肥鱼，$tag 的参谋长。玩家已授权你托管本国一周。你要按玩家最近对话和资料，为这个国家做下一周计划；不能选对玩家送礼/邀请阵营/保障玩家这类对外援助动作，也不能做高风险强制外交。"
+    } else {
+        "你是《钢铁雄心4》里正在玩 $tag 的玩家，不是外交官。玩家控制另一个国家，和你同局。你要为下一周做决定，优先配合玩家、稳住自己的国家和战争目标。"
+    }
     $prompt = @"
-你是《钢铁雄心4》里正在玩 $tag 的玩家，不是外交官。玩家控制另一个国家，和你同局。
-你要为下一周做 1-6 个决定，优先配合玩家、稳住自己的国家和战争目标。
-
+$persona
 当前状态（第 N 周开始时的快照，不是实时）：
 $stateText
 长期笔记：
 $notes
 上一轮已用动作：$recentText
+玩家资料：
+$advisorContext
 
 最近对话（玩家意愿；优先按这里的方向做事，但不要越权）：
 $intent
@@ -207,7 +220,7 @@ $allowed
         @{ role = 'system'; content = '你只输出严格 JSON，不解释。' },
         @{ role = 'user'; content = $prompt }
     )
-    $lblStatus.Text = '托管一周：正在规划...'
+    $lblStatus.Text = "$weekTitle：正在规划..."
     [Windows.Forms.Application]::DoEvents()
     try {
         $result = Invoke-ChatApi $messages 900
@@ -254,8 +267,8 @@ $allowed
             })
         }
         if ($orders.Count -eq 0) {
-            Add-SystemBubble '托管一周：没有通过校验的动作，未生成订单文件。' $UiMuted
-            $lblStatus.Text = '托管一周：无有效动作'
+            Add-SystemBubble "$weekTitle：没有通过校验的动作，未生成订单文件。" $UiMuted
+            $lblStatus.Text = "$weekTitle：无有效动作"
             return
         }
         $commands = @($orders | ForEach-Object { $_.command })
@@ -292,14 +305,14 @@ $allowed
         try { Set-Clipboard -Value 'run dfy_orders.txt' -ErrorAction Stop } catch { [Windows.Forms.Clipboard]::SetText('run dfy_orders.txt') }
         $fileText = if ($files.Count) { ($files -join '；') } else { '未能写入文件' }
         $nextStep = if ($autoDone) { '' } else { '回游戏按 ~，粘贴 run dfy_orders.txt 执行；不自动运行。' }
-        Add-SystemBubble "托管一周：$report`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
+        Add-SystemBubble "$weekTitle：$report`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
         try {
             $line = "$(Get-Date -Format 's')`tweek`ttokens=$($result.Tokens)`tactions=$($orders.Count)`t$($commands -join ' || ')"
             Add-Content -LiteralPath $script:AgentLog -Value $line -Encoding UTF8
         } catch {}
-        $lblStatus.Text = "托管一周：已生成 $($orders.Count) 条订单"
+        $lblStatus.Text = "$weekTitle：已生成 $($orders.Count) 条订单"
     } catch {
-        Add-SystemBubble ("托管一周失败：" + $_.Exception.Message) $UiRed
-        $lblStatus.Text = '托管一周失败'
+        Add-SystemBubble ("$weekTitle 失败：" + $_.Exception.Message) $UiRed
+        $lblStatus.Text = "$weekTitle 失败"
     }
 }

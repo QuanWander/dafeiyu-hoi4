@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '1.0.0'
+$script:appVersion = '1.0.1'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -249,8 +249,9 @@ eval_effect ENG = { add_to_faction = GER }
 
 ### 边界
 
-A 是参谋：给建议、优先级、代价和风险。
-A 不是代管：不点游戏、不排生产线、不移动部队、不自动执行。
+A 默认是参谋：给建议、优先级、代价和风险。
+A 也可以**托管玩家一周**：你点按钮后，软件按你最近的对话和资料，为玩家国生成并执行一单订单。
+A 不是全自动代管：自动托管在 A 模式关闭；不自动排生产线、不移动部队。
 
 ### A 下一步可做
 
@@ -355,7 +356,7 @@ A：当前只有每周国力快照，没有国策树进度、生产/建造队列
    点右上角“资料”补充，或让她先问你；不要把“不知道”当成她坏了。
 
 Q：同国参谋能不能替我操作？
-A：不能。A 只给建议；行动按钮会禁用。B 代管需要外部自动化，风险高，未承诺。
+A：A 默认只给建议；点“托管玩家一周”才会按你的意愿给玩家国生成并执行订单。自动托管在 A 模式关闭。
 
 Q：她说要改国策，为什么没生成命令？
 A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就不生成，避免乱执行。
@@ -1310,10 +1311,11 @@ function Update-Controls {
     $lblAI.Text = if ($script:advisorMode) { '同国参谋' } else { 'AI 国家' }
     $btnActions.Enabled = -not $script:advisorMode
     $btnAdvisorInfo.Visible = $script:advisorMode
-    $btnAgent.Enabled = -not $script:advisorMode
+    $btnAgent.Enabled = $true
+    $btnAgent.Text = if ($script:advisorMode) { '托管玩家一周' } else { '托管一周' }
     $btnAuto.Enabled = -not $script:advisorMode
-    $btnAuto.Text = if ($script:cfg.auto_agent) { '自动托管：开' } else { '自动托管：关' }
-    $btnAuto.BackColor = if ($script:cfg.auto_agent) { [Drawing.Color]::FromArgb(74, 98, 82) } else { $UiCard }
+    $btnAuto.Text = if ($script:advisorMode) { '自动托管：A模式关' } elseif ($script:cfg.auto_agent) { '自动托管：开' } else { '自动托管：关' }
+    $btnAuto.BackColor = if (-not $script:advisorMode -and $script:cfg.auto_agent) { [Drawing.Color]::FromArgb(74, 98, 82) } else { $UiCard }
     $items = @($comboAI.Items | ForEach-Object { ([string]$_).Substring(0, 3) })
     if (($tags -join ',') -ne ($items -join ',')) {
         $current = Get-SelectedTag
