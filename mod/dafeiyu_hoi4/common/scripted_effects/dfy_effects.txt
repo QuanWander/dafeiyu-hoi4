@@ -171,3 +171,7 @@ dfy_action_invest_infra = {
 		log = "DFY|action|invest_infra|tag=[THIS.GetTag]"
 	}
 }
+
+dfy_log_stock = {
+	log = "DFY|stock|tag=[THIS.GetTag]|fuel_k=[?THIS.fuel_k]|inf=[?THIS.num_equipment@infantry_equipment_1]|support=[?THIS.num_equipment@support_equipment_1]"
+}

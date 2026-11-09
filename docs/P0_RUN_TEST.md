@@ -74,6 +74,32 @@ DFY|state|tag=ENG|...|mil=15
 
 FRA 军工 8→9，ENG 军工仍 15；tag 与实际工厂数一致。**invest_mil effect 通过。**
 
+## 装备/燃料库存回执（v0.9.29）
+
+重启后运行：
+
+```text
+run dfy_stock_test.txt
+```
+
+文件：
+
+```text
+eval_effect ENG = { dfy_log_stock = yes }
+add_equipment 1000 infantry_equipment_1
+eval_effect ENG = { add_fuel = 10000 }
+eval_effect ENG = { dfy_log_stock = yes }
+```
+
+看两条：
+
+```text
+DFY|stock|tag=ENG|fuel_k=...|inf=...|support=...
+```
+
+第二条的 `fuel_k` 应约 +10，`inf` 应 +1000。这个文件只加一次装备/燃料，用来验证，不是 P1 订单。
+
+
 
 
 
