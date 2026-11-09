@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '1.3.1'
+$script:appVersion = '1.4.0'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -379,6 +379,8 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 · 新增“主动提议”快捷问法；
 · 新增 `[FOCUS:...]` 国策标记，核对焦点树后才生成命令；
 · 同国参谋（A）：看玩家国，资料面板、国策下拉；
+· 主界面本周计划卡：愿景/国策/三件事，托管后即时刷新；
+· 国策分支显示 x/y 列，按列/行排序；
 · A 支持“托管玩家一周”和“连续托管：开”；
 · 新增“本局愿景”：从聊天提炼长期目标，之后每周按愿景推进；
 · 50 条行动，10 个类别；高风险二次确认；
@@ -1297,6 +1299,27 @@ function Update-StateCard {
     $flag.BackColor = [Drawing.Color]::FromArgb(78, 67, 52)
 }
 
+function Update-PlanCard {
+    $tag = Get-SelectedTag
+    if (-not $tag) {
+        $planGoal.Text = '愿景：等待国家状态'
+        $planFocus.Text = '国策：—'
+        $planBrief.Text = '本周：进游戏、过一周，或点“托管”'
+        return
+    }
+    $p = Get-AgentPlanCard $tag
+    $goal = [string]$p.goal
+    if (-not $goal) { $goal = '还没有愿景：在聊天里说“我以后想……”' }
+    if ($goal.Length -gt 88) { $goal = $goal.Substring(0, 88) + '...' }
+    $focus = [string]$p.focus
+    if (-not $focus) { $focus = '—' }
+    $brief = @($p.brief | Where-Object { $_ } | Select-Object -First 3)
+    $briefText = if ($brief.Count) { $brief -join '  ·  ' } else { '还没有本周计划' }
+    $planGoal.Text = "愿景：$goal"
+    $planFocus.Text = "本周国策：$focus"
+    $planBrief.Text = "本周：$briefText"
+}
+
 function Update-Controls {
     Read-Log
     $playerChanged = $false
@@ -1355,6 +1378,7 @@ function Update-Controls {
     }
 
     Update-StateCard
+    Update-PlanCard
     $selectedTag = Get-SelectedTag
     if ($selectedTag -and $script:states.ContainsKey($selectedTag)) {
         Update-ActionHistory $selectedTag $script:states[$selectedTag]
@@ -2013,16 +2037,22 @@ function Get-FocusChoices([string]$tag) {
             if (-not $text) { continue }
             $head = $text.Substring(0, [Math]::Min(3000, $text.Length))
             if ($head -notmatch 'focus_tree\s*=\s*\{' -or $head -notmatch "tag\s*=\s*$tag") { continue }
-            foreach ($m in [regex]::Matches($text, "(?m)^\s*id\s*=\s*($tag_[A-Za-z0-9_]+)\s*$")) {
+            $focusPattern = '(?ms)^\s*id\s*=\s*(' + [regex]::Escape($tag) + '_[A-Za-z0-9_]+)\s*$([\s\S]*?)(?=^\s*id\s*=|\z)'
+            foreach ($m in [regex]::Matches($text, $focusPattern)) {
                 $id = $m.Groups[1].Value
                 if ($seen.ContainsKey($id)) { continue }
                 $seen[$id] = $true
+                $block = $m.Groups[2].Value
+                $fx = 0; $fy = 0
+                if ($block -match '(?m)^\s*x\s*=\s*(-?\d+)') { $fx = [int]$Matches[1] }
+                if ($block -match '(?m)^\s*y\s*=\s*(-?\d+)') { $fy = [int]$Matches[1] }
                 $name = if ($loc.ContainsKey($id)) { $loc[$id] } else { $id }
-                [void]$choices.Add([pscustomobject]@{ id = $id; name = $name; display = "$name · $id" })
+                $branch = "第$($fx + 1)列"
+                [void]$choices.Add([pscustomobject]@{ id = $id; name = $name; display = "$name · $id · $branch"; x = $fx; y = $fy; branch = $branch })
             }
         }
     }
-    $result = @($choices | Sort-Object name)
+    $result = @($choices | Sort-Object x, y, name)
     $script:focusChoiceCache[$tag] = $result
     return $result
 }
@@ -3169,6 +3199,48 @@ $lblChatSub.Location = New-Object Drawing.Point(418, 50)
 $lblChatSub.Size = New-Object Drawing.Size(480, 20)
 $form.Controls.Add($lblChatSub)
 
+$planPanel = New-Object System.Windows.Forms.Panel
+$planPanel.Location = New-Object Drawing.Point(358, 80)
+$planPanel.Size = New-Object Drawing.Size(806, 90)
+$planPanel.BackColor = $UiCard2
+Add-SoftBorder $planPanel ([Drawing.Color]::FromArgb(80, 181, 146, 94))
+Set-Rounded $planPanel 14
+$form.Controls.Add($planPanel)
+
+$planTitle = New-Object System.Windows.Forms.Label
+$planTitle.Text = '本周计划'
+$planTitle.Font = New-Object Drawing.Font('Microsoft YaHei UI', 10, [Drawing.FontStyle]::Bold)
+$planTitle.ForeColor = [Drawing.Color]::FromArgb(181, 146, 94)
+$planTitle.BackColor = [Drawing.Color]::Transparent
+$planTitle.Location = New-Object Drawing.Point(16, 8)
+$planTitle.Size = New-Object Drawing.Size(120, 20)
+$planPanel.Controls.Add($planTitle)
+
+$planGoal = New-Object System.Windows.Forms.Label
+$planGoal.Text = '愿景：等待计划'
+$planGoal.ForeColor = $UiText
+$planGoal.BackColor = [Drawing.Color]::Transparent
+$planGoal.Location = New-Object Drawing.Point(120, 8)
+$planGoal.Size = New-Object Drawing.Size(666, 20)
+$planPanel.Controls.Add($planGoal)
+
+$planFocus = New-Object System.Windows.Forms.Label
+$planFocus.Text = '本周国策：—'
+$planFocus.ForeColor = $UiCyan
+$planFocus.BackColor = [Drawing.Color]::Transparent
+$planFocus.Location = New-Object Drawing.Point(16, 32)
+$planFocus.Size = New-Object Drawing.Size(770, 20)
+$planPanel.Controls.Add($planFocus)
+
+$planBrief = New-Object System.Windows.Forms.Label
+$planBrief.Text = '本周：还没有计划'
+$planBrief.ForeColor = $UiMuted
+$planBrief.BackColor = [Drawing.Color]::Transparent
+$planBrief.Location = New-Object Drawing.Point(16, 54)
+$planBrief.Size = New-Object Drawing.Size(770, 30)
+$planBrief.AutoEllipsis = $true
+$planPanel.Controls.Add($planBrief)
+
 $btnCopyChat = New-FlatButton '复制对话' 1074 48 80 26 $UiCard
 $form.Controls.Add($btnCopyChat)
 $btnCopyChat.BringToFront()
@@ -3240,8 +3312,8 @@ $btnCopyChat.Add_Click({
 })
 
 $chatPanel = New-Object System.Windows.Forms.FlowLayoutPanel
-$chatPanel.Location = New-Object Drawing.Point(358, 80)
-$chatPanel.Size = New-Object Drawing.Size(806, 508)
+$chatPanel.Location = New-Object Drawing.Point(358, 178)
+$chatPanel.Size = New-Object Drawing.Size(806, 410)
 $chatPanel.BackColor = $UiBg
 Add-DreamBackground $chatPanel ([Drawing.Color]::FromArgb(30, 27, 23)) ([Drawing.Color]::FromArgb(19, 19, 18))
 $chatPanel.AutoScroll = $true

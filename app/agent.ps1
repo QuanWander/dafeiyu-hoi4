@@ -52,18 +52,33 @@ function Get-AgentGoalFromChat([string]$tag) {
     return ''
 }
 
-function Set-AgentRecord([string]$tag, [string]$notes, $actions, [string]$goal = '', [string]$focus = '') {
+function Set-AgentRecord([string]$tag, [string]$notes, $actions, [string]$goal = '', [string]$focus = '', $brief = @()) {
     $store = Get-AgentStore
     $store[(Get-AgentKey $tag)] = [pscustomobject]@{
         notes = $notes
         goal = $goal
         focus = $focus
+        brief = @($brief)
         week = 0
         updated = (Get-Date).ToString('s')
         actions = @($actions)
     }
     $script:agentStore = $store
     try { $store | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $script:AgentFile -Encoding UTF8 } catch {}
+}
+
+function Get-AgentPlanCard([string]$tag) {
+    $store = Get-AgentStore
+    $key = Get-AgentKey $tag
+    if (-not $store.ContainsKey($key)) {
+        return [pscustomobject]@{ goal = ''; focus = ''; brief = @() }
+    }
+    $r = $store[$key]
+    return [pscustomobject]@{
+        goal = if ($r.goal) { [string]$r.goal } else { '' }
+        focus = if ($r.focus) { [string]$r.focus } else { '' }
+        brief = @($r.brief)
+    }
 }
 
 function Get-AgentStateText([string]$tag) {
@@ -87,7 +102,7 @@ function Get-AgentFocusList([string]$tag) {
     $choices = @(Get-FocusChoices $tag)
     if ($choices.Count -eq 0) { return '' }
     $rows = @()
-    foreach ($c in $choices) { $rows += "- $($c.id) | $($c.name)" }
+    foreach ($c in $choices) { $rows += "- $($c.id) | $($c.name) | $($c.branch) x=$($c.x) y=$($c.y)" }
     return ($rows -join "`n")
 }
 
@@ -518,7 +533,10 @@ $templateList
         $newNotes = if ($data.notes) { [string]$data.notes } else { $notes }
         $newGoal = if ($data.goal) { [string]$data.goal } else { $goal }
         if ($newGoal.Length -gt 500) { $newGoal = $newGoal.Substring(0, 500) }
-        Set-AgentRecord $tag $newNotes @($orders) $newGoal
+        $newBrief = @($data.brief)
+        $newFocus = if ($data.focus) { [string]$data.focus } else { '' }
+        Set-AgentRecord $tag $newNotes @($orders) $newGoal $newFocus $newBrief
+        try { Update-PlanCard } catch {}
         $script:agentAutoTag = $tag
         $script:agentAutoDate = [string]$script:states[$tag].dateText
         $script:agentAutoLast = Get-Date

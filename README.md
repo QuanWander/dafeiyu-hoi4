@@ -6,7 +6,7 @@
 
 独立项目，不依赖 NationMind。
 
-**v1.3.1** · Windows 10/11 · PowerShell 5.1 + WinForms + 配套 mod
+**v1.4.0** · Windows 10/11 · PowerShell 5.1 + WinForms + 配套 mod
 
 ![主界面](docs/screenshot.png)
 
@@ -49,6 +49,16 @@
 - 订单仍然是真实 `complete_national_focus` / effect；
 - 0 tokens；
 - 需要模型判断复杂局势时，可在设置里关掉。
+
+### 本周计划卡
+
+聊天区上方固定显示：
+
+- 本局愿景；
+- 本周国策；
+- 本周三件事。
+
+每次托管后立即刷新，不用翻聊天记录。
 
 ### 50 条行动
 
