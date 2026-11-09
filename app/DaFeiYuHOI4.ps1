@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.22'
+$script:appVersion = '0.9.23'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -30,6 +30,7 @@ $UiBubbleAi = [Drawing.Color]::FromArgb(42, 38, 32)
 $UiBubbleUser = [Drawing.Color]::FromArgb(82, 34, 30)
 
 . (Join-Path $PSScriptRoot 'actions.ps1')
+. (Join-Path $PSScriptRoot 'agent.ps1')
 
 $script:helpSections = [ordered]@{
     '第一次使用' = @"
@@ -114,6 +115,45 @@ eval_effect ENG = { add_to_faction = GER }
 · unverified：超时没看到变化，可能条件不满足。
 
 同一个行动 45 秒内重复，会先问你一次。
+"@
+    '托管一周（P1）' = @"
+## 托管一周（P1）
+
+左侧“托管一周”让大肥鱼按当前状态做下一周计划，生成订单文件。
+
+它做：
+· 读取 AI 国家周快照、长期笔记；
+· 只从允许的低风险动作里选 ≤6 条；
+· 校验动作、目标、数值和命令前缀；
+· 写 dfy_orders.txt；
+· 复制 run dfy_orders.txt。
+
+它不做：
+· 不自动运行；
+· 不模拟键盘；
+· 不直接改游戏内存；
+· 不碰聊天路径。
+
+### 执行
+
+1. 游戏里按 ~ 打开控制台；
+2. 粘贴 run dfy_orders.txt；
+3. 回车。
+
+订单文件会写到：
+· 游戏根目录；
+· Documents\Paradox Interactive\Hearts of Iron IV。
+
+### P0 先验
+
+先在游戏根目录放 dfy_p0_test.txt：
+eval_effect GER = { add_political_power = 1 }
+eval_effect GER = { add_political_power = 1 }
+eval_effect GER = { dfy_log_state = yes }
+
+控制台执行 run dfy_p0_test.txt。
+政治点 +2、日志出现 DFY|state 才算 run 可用。
+如果没反应，P1 只能当“生成订单/剪贴板”用，不能承诺一键执行。
 "@
     'AI 玩家模式' = @"
 ## AI 玩家模式
@@ -306,6 +346,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 · 新增 **同国参谋（A）**：右上角开关，切到玩家国视角；
 · 普通 AI 模式改成“她正在玩这个国家”，会主动配合、提计划、改变国策方向；
 · 新增快捷问法“主动提议”和 `[FOCUS:...]` 国策标记；
+· 新增“托管一周”：生成校验后的 dfy_orders.txt，不自动执行；
 · 新增参谋资料面板：国策/科研/建造/生产/编制/法律/目标；
 · 国策字段读取本国焦点树，可搜索下拉、手写、留空；
 · 参谋模式不输出 [ACTION]、不生成命令、行动按钮禁用；
@@ -1251,6 +1292,7 @@ function Update-Controls {
     $lblAI.Text = if ($script:advisorMode) { '同国参谋' } else { 'AI 国家' }
     $btnActions.Enabled = -not $script:advisorMode
     $btnAdvisorInfo.Visible = $script:advisorMode
+    $btnAgent.Enabled = -not $script:advisorMode
     $items = @($comboAI.Items | ForEach-Object { ([string]$_).Substring(0, 3) })
     if (($tags -join ',') -ne ($items -join ',')) {
         $current = Get-SelectedTag
@@ -3005,6 +3047,14 @@ $btnMemory = New-FlatButton '记忆' 20 512 125 32 $UiCard
 $sidebar.Controls.Add($btnMemory)
 $btnHelp = New-FlatButton '帮助' 155 512 125 32 $UiCard
 $sidebar.Controls.Add($btnHelp)
+
+$btnAgent = New-FlatButton '托管一周' 20 556 125 36 $UiBlue
+$sidebar.Controls.Add($btnAgent)
+$btnAgent.Add_Click({
+    try { Invoke-AgentWeek } catch {
+        [Windows.Forms.MessageBox]::Show(($_.Exception.Message), '托管一周失败')
+    }
+})
 
 $lblCampaign = New-Object System.Windows.Forms.Label
 $lblCampaign.Text = '本局：—'
