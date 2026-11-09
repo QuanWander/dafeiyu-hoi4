@@ -24,6 +24,10 @@ public class DfyInput40 {
     [DllImport("user32.dll")] public static extern IntPtr SetFocus(IntPtr h);
     [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out RECT r);
     [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
+    [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint msg, IntPtr w, IntPtr l);
+    [DllImport("user32.dll")] public static extern int GetSystemMetrics(int n);
+    [DllImport("user32.dll")] public static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
     [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
     [DllImport("user32.dll")] public static extern uint SendInput(uint n, INPUT[] p, int cb);
     public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
@@ -54,6 +58,26 @@ public class DfyInput40 {
     public static uint Key(ushort scan, uint flags) {
         var a = new INPUT[1]; a[0].type = 1; a[0].u.ki.wScan = scan; a[0].u.ki.dwFlags = flags;
         return SendInput(1, a, Marshal.SizeOf(typeof(INPUT)));
+    }
+    public static uint Mouse(uint flags) {
+        var a = new INPUT[1]; a[0].type = 0; a[0].u.mi.dwFlags = flags;
+        return SendInput(1, a, Marshal.SizeOf(typeof(INPUT)));
+    }
+    public static uint MouseAbsolute(int x, int y, uint flags) {
+        int sw = GetSystemMetrics(0), sh = GetSystemMetrics(1);
+        var a = new INPUT[1]; a[0].type = 0;
+        a[0].u.mi.dx = (int)((long)x * 65535 / Math.Max(1, sw - 1));
+        a[0].u.mi.dy = (int)((long)y * 65535 / Math.Max(1, sh - 1));
+        a[0].u.mi.dwFlags = flags | 0x0001 | 0x8000;
+        return SendInput(1, a, Marshal.SizeOf(typeof(INPUT)));
+    }
+    public static bool ClickMessage(IntPtr h, int x, int y) {
+        IntPtr lp = (IntPtr)((y << 16) | (x & 0xffff));
+        PostMessage(h, 0x0200, IntPtr.Zero, lp);
+        bool a = PostMessage(h, 0x0201, (IntPtr)1, lp);
+        System.Threading.Thread.Sleep(60);
+        bool b = PostMessage(h, 0x0202, IntPtr.Zero, lp);
+        return a && b;
     }
     public static uint Char(char c) {
         var a = new INPUT[1]; a[0].type = 1; a[0].u.ki.wScan = c; a[0].u.ki.dwFlags = 4;
@@ -105,8 +129,33 @@ function Send-DfyScanKey([int]$scan) {
     if ([DfyInput40]::Key([int]$scan, 3) -ne 1) { throw 'SendInput 按键抬起失败。' }
 }
 
-function Send-DfyPasteText([string]$text) {
+function Send-DfyMouseClick([int]$x, [int]$y) {
     Initialize-DfyInput
+    $h = Get-DfyHoi4Window
+    if ($h -eq [IntPtr]::Zero) { throw '没有找到 HOI4 窗口。' }
+    if (-not [DfyInput40]::Focus($h)) { throw '无法把 HOI4 切到前台，拒绝点击。' }
+    $cr = [DfyInput40]::ClientRect($h)
+    if (-not $cr) { throw '无法获取游戏客户区。' }
+    $sx = $cr[0] + $x
+    $sy = $cr[1] + $y
+    [DfyInput40]::SetCursorPos($sx, $sy) | Out-Null
+    Start-Sleep -Milliseconds 120
+    if ([DfyInput40]::MouseAbsolute($sx, $sy, 0x0002) -ne 1) { throw 'SendInput 鼠标按下失败。' }
+    Start-Sleep -Milliseconds 60
+    if ([DfyInput40]::MouseAbsolute($sx, $sy, 0x0004) -ne 1) { throw 'SendInput 鼠标抬起失败。' }
+    Start-Sleep -Milliseconds 180
+}
+
+function Send-DfyMouseMessage([int]$x, [int]$y) {
+    Initialize-DfyInput
+    $h = Get-DfyHoi4Window
+    if ($h -eq [IntPtr]::Zero) { throw '没有找到 HOI4 窗口。' }
+    if (-not [DfyInput40]::Focus($h)) { throw '无法把 HOI4 切到前台，拒绝点击。' }
+    if (-not [DfyInput40]::ClickMessage($h, $x, $y)) { throw '窗口消息点击失败。' }
+    Start-Sleep -Milliseconds 250
+}
+
+function Send-DfyPasteText([string]$text) {    Initialize-DfyInput
     try { Set-Clipboard -Value $text -ErrorAction Stop } catch { [Windows.Forms.Clipboard]::SetText($text) }
     Start-Sleep -Milliseconds 80
     if ([DfyInput40]::Key(0x1D, 1) -ne 1) { throw 'Ctrl 按下失败。' }

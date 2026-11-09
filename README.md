@@ -6,7 +6,7 @@
 
 独立项目，不依赖 NationMind。
 
-**v1.4.0** · Windows 10/11 · PowerShell 5.1 + WinForms + 配套 mod
+**v1.5.0** · Windows 10/11 · PowerShell 5.1 + WinForms + 配套 mod
 
 ![主界面](docs/screenshot.png)
 
@@ -49,6 +49,13 @@
 - 订单仍然是真实 `complete_national_focus` / effect；
 - 0 tokens；
 - 需要模型判断复杂局势时，可在设置里关掉。
+
+### token 预算
+
+- 默认每日 200000 tokens，0 = 不限；
+- 设置里可改；
+- 超限时模型调用会被拦下，本地规划仍可用；
+- 使用量存本机 `usage.json`，按日/周统计。
 
 ### 本周计划卡
 

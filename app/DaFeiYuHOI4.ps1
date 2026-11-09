@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '1.4.0'
+$script:appVersion = '1.5.0'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -373,6 +373,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 · 修正 x64 INPUT 结构（32→40 字节），SendInput 可用；
 · 自动执行前要求 -debug_mode，且控制台关闭；
 · 本地规则规划：常规周 0 tokens，按状态/愿景/上一轮动作选国策和动作；
+· token 预算：默认每日 200000，超限拦模型调用，本地规划仍可用；
 · 自动失败回退 HID/手动；HID 为可选兜底；
 · 自动托管 25 秒冷却，避免高速跑周追 backlog；
 · 普通 AI 模式：她认为自己在玩这个国家，会主动配合、提计划、改国策方向；
@@ -394,7 +395,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 }
 
 function Read-Config {
-    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true; auto_agent = $true; auto_player = $false; local_plan = $true; templates_enabled = $false }
+    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true; auto_agent = $true; auto_player = $false; local_plan = $true; templates_enabled = $false; token_day_cap = 200000 }
     if (Test-Path -LiteralPath $ConfigFile) {
         try {
             $saved = Get-Content -LiteralPath $ConfigFile -Raw | ConvertFrom-Json
@@ -409,6 +410,7 @@ function Read-Config {
             if ($null -ne $saved.auto_player) { $cfg.auto_player = [bool]$saved.auto_player }
             if ($null -ne $saved.local_plan) { $cfg.local_plan = [bool]$saved.local_plan }
             if ($null -ne $saved.templates_enabled) { $cfg.templates_enabled = [bool]$saved.templates_enabled }
+            if ($null -ne $saved.token_day_cap) { $cfg.token_day_cap = [int]$saved.token_day_cap }
         } catch {}
     }
     return $cfg
@@ -780,7 +782,44 @@ function Update-ActionHistory([string]$tag, $state) {
     }
 }
 
+function Get-TokenUsage {
+    $path = Join-Path $AppData 'usage.json'
+    $today = (Get-Date).ToString('yyyy-MM-dd')
+    $monday = (Get-Date).Date.AddDays(-(([int](Get-Date).DayOfWeek + 6) % 7)).ToString('yyyy-MM-dd')
+    $u = [pscustomobject]@{ date = $today; day = 0; week_start = $monday; week = 0 }
+    if (Test-Path -LiteralPath $path) {
+        try {
+            $old = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+            if ($old.week_start -eq $monday) { $u.week = [int]$old.week }
+            if ($old.date -eq $today) { $u.day = [int]$old.day }
+        } catch {}
+    }
+    return $u
+}
+
+function Save-TokenUsage($usage) {
+    try { $usage | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $AppData 'usage.json') -Encoding UTF8 } catch {}
+}
+
+function Test-TokenBudget {
+    $cap = [int]$script:cfg.token_day_cap
+    if ($cap -le 0) { return }
+    $u = Get-TokenUsage
+    if ($u.day -ge $cap) {
+        throw "今日 token 预算已用完（$($u.day)/$cap）。本地规划仍可用；可在设置里调高上限。"
+    }
+}
+
+function Add-TokenUsage([int]$n) {
+    if ($n -le 0) { return }
+    $u = Get-TokenUsage
+    $u.day += $n
+    $u.week += $n
+    Save-TokenUsage $u
+}
+
 function Invoke-ChatApi($messages, [int]$maxTokens = 700) {
+    Test-TokenBudget
     $body = @{
         model = $script:cfg.model
         messages = @($messages)
@@ -799,6 +838,7 @@ function Invoke-ChatApi($messages, [int]$maxTokens = 700) {
     if (-not $reply) { throw 'API 返回了空回复。' }
     $tokens = 0
     if ($parsed.usage.total_tokens) { $tokens = [int]$parsed.usage.total_tokens }
+    Add-TokenUsage $tokens
     return @{ Reply = $reply; Tokens = $tokens }
 }
 
@@ -1828,7 +1868,7 @@ function Show-Help([string]$section = '第一次使用') {
 function Show-Settings {
     $dialog = New-Object System.Windows.Forms.Form
     $dialog.Text = '设置'
-    $dialog.ClientSize = New-Object Drawing.Size(480, 340)
+    $dialog.ClientSize = New-Object Drawing.Size(480, 390)
     $dialog.StartPosition = 'CenterParent'
     $dialog.FormBorderStyle = 'FixedDialog'
     $dialog.MaximizeBox = $false
@@ -1887,14 +1927,30 @@ function Show-Settings {
     $localPlan = New-Object System.Windows.Forms.CheckBox
     $localPlan.Text = '本地规则规划（常规周 0 tokens，不调模型）'
     $localPlan.ForeColor = $UiText
-    $localPlan.Location = New-Object Drawing.Point(24, 214)
+    $localPlan.Location = New-Object Drawing.Point(24, 268)
     $localPlan.Size = New-Object Drawing.Size(420, 24)
     $localPlan.Checked = [bool]$script:cfg.local_plan
     $dialog.Controls.Add($localPlan)
 
+    $capLabel = New-Object System.Windows.Forms.Label
+    $capLabel.Text = '每日 token 上限（0 = 不限）'
+    $capLabel.ForeColor = $UiMuted
+    $capLabel.Location = New-Object Drawing.Point(24, 214)
+    $capLabel.Size = New-Object Drawing.Size(200, 20)
+    $dialog.Controls.Add($capLabel)
+
+    $capBox = New-Object System.Windows.Forms.TextBox
+    $capBox.Text = [string]$script:cfg.token_day_cap
+    $capBox.Location = New-Object Drawing.Point(230, 212)
+    $capBox.Size = New-Object Drawing.Size(120, 26)
+    $capBox.BackColor = $UiCard2
+    $capBox.ForeColor = $UiText
+    $capBox.BorderStyle = 'FixedSingle'
+    $dialog.Controls.Add($capBox)
+
     $test = New-Object System.Windows.Forms.Button
     $test.Text = '测试 Key'
-    $test.Location = New-Object Drawing.Point(24, 286)
+    $test.Location = New-Object Drawing.Point(24, 330)
     $test.Size = New-Object Drawing.Size(100, 32)
     $test.FlatStyle = 'Flat'
     $test.BackColor = $UiCard
@@ -1903,14 +1959,14 @@ function Show-Settings {
 
     $save = New-Object System.Windows.Forms.Button
     $save.Text = '保存'
-    $save.Location = New-Object Drawing.Point(264, 286)
+    $save.Location = New-Object Drawing.Point(264, 330)
     $save.Size = New-Object Drawing.Size(80, 32)
     $save.DialogResult = 'OK'
     $dialog.Controls.Add($save)
 
     $cancel = New-Object System.Windows.Forms.Button
     $cancel.Text = '取消'
-    $cancel.Location = New-Object Drawing.Point(364, 286)
+    $cancel.Location = New-Object Drawing.Point(364, 330)
     $cancel.Size = New-Object Drawing.Size(80, 32)
     $cancel.DialogResult = 'Cancel'
     $dialog.Controls.Add($cancel)
@@ -1933,6 +1989,8 @@ function Show-Settings {
 
     if ($dialog.ShowDialog() -eq 'OK') {
         $script:cfg.local_plan = [bool]$localPlan.Checked
+        $cap = 0
+        if ([int]::TryParse($capBox.Text.Trim(), [ref]$cap)) { $script:cfg.token_day_cap = [math]::Max(0, $cap) }
         $newModel = $modelBox.Text.Trim()
         if ($newModel) { $script:cfg.model = $newModel }
         if ($keyBox.Text.Trim()) {

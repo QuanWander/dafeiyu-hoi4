@@ -54,7 +54,9 @@ division_template = {
 
 **重要实测（v1.3.1）**：把这段放进 `eval_effect TAG = { ... }`，控制台报
 `Had errors compiling the effect`，后面的 `dfy_log_state` 也不执行。说明“语法在 decision 文件里成立”不等于“运行时可 eval”。
-在找到 runtime 可用的包装前，模板功能保持关闭（`templates_enabled=false`）。
+**补测（v1.4.0）**：`create_unit = { division_template = "Strelkovaya Diviziya" ... }`
+不报错，state 也写出，但 SOV 师数 138→138，运行时静默无效。
+在找到 runtime 可用的包装前，模板/生成单位功能保持关闭（`templates_enabled=false`）。
 
 ### 不能做
 
@@ -95,8 +97,16 @@ division_template = {
 
 官方：`effects_documentation.md` → `add_to_faction`、`set_autonomy`、`annex_country`
 
-## 7. 状态与遥测
+## 6.5 UI 输入边界（实测）
 
+- 键盘 `U` 能打开“招募与部署”，说明键盘注入有效；
+- `SetCursorPos` 能移动系统鼠标；
+- `SendInput` 左键点击面板按钮无反应；
+- `PostMessage WM_LBUTTONDOWN/UP` 会被游戏当作地图点击，面板关闭/选州；
+- 结论：HOI4 使用原始输入，软件鼠标注入不能操作 UI；
+- 编制/训练/空海军任务只能走 HID 鼠标，或接受不支持。
+
+## 7. 状态与遥测
 mod 每周写：
 
 ```text
