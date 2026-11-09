@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.21'
+$script:appVersion = '0.9.22'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -38,7 +38,7 @@ $script:helpSections = [ordered]@{
 1. 打开 HOI4，选你想玩的国家，正常开局。
 2. 在游戏里过一周，让配套 mod 写下第一批状态。
 3. 打开桌面“大肥鱼 HOI4”，左侧会自动识别你玩的国家。
-4. 想让 AI 扮演别的国家：在“AI 国家”里选一个非玩家国家，然后说话。
+4. 想让 AI 扮演别的国家：在“AI 国家”里选一个非玩家国家，然后说话。她会当自己正在玩这个国家。
 5. 想让大肥鱼当你的参谋：点右上角“同国参谋”，再点“资料”补充国策/生产/编制。
 
 如果软件把你玩的国家认错了：
@@ -114,6 +114,38 @@ eval_effect ENG = { add_to_faction = GER }
 · unverified：超时没看到变化，可能条件不满足。
 
 同一个行动 45 秒内重复，会先问你一次。
+"@
+    'AI 玩家模式' = @"
+## AI 玩家模式
+
+普通的“AI 国家”模式，不是让大肥鱼当外交官。
+她是**正在玩这个国家的玩家**，这个国家由她控制。
+
+她会：
+· 有自己的长期目标、国策方向、建军/扩张计划；
+· 主动提出配合，不用等你问；
+· 告诉你她下一步做什么、希望你做什么、能给你什么；
+· 拒绝、提条件、改变自己的国策方向。
+
+快捷按钮 **主动提议** 就是让她不等你问，直接给下一步计划。
+
+### 她能改自己的国策吗
+
+可以提出方向；如果她明确选了国策，会在回复末尾输出：
+[FOCUS:焦点名或ID]
+
+软件会：
+· 到本国焦点树里核对；
+· 找到就复制：
+  eval_effect 国家 = { complete_national_focus = 焦点ID }
+· 找不到就提示，不生成命令。
+
+仍然要你回游戏粘贴，软件不自动执行。
+
+### 边界
+
+她能“提出并生成命令”，不能“自己点游戏”。
+生产线、编制、部队移动仍不能由软件直接操作。
 "@
     '同国参谋（A）' = @"
 ## 同国参谋（A）
@@ -263,11 +295,17 @@ A：当前只有每周国力快照，没有国策树进度、生产/建造队列
 
 Q：同国参谋能不能替我操作？
 A：不能。A 只给建议；行动按钮会禁用。B 代管需要外部自动化，风险高，未承诺。
+
+Q：她说要改国策，为什么没生成命令？
+A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就不生成，避免乱执行。
+   让她用国策 ID 或准确中文名，或者用“行动 → 完成国家焦点”手动选。
 "@
     '本版更新' = @"
 ## 本版更新：v$($script:appVersion)
 
 · 新增 **同国参谋（A）**：右上角开关，切到玩家国视角；
+· 普通 AI 模式改成“她正在玩这个国家”，会主动配合、提计划、改变国策方向；
+· 新增快捷问法“主动提议”和 `[FOCUS:...]` 国策标记；
 · 新增参谋资料面板：国策/科研/建造/生产/编制/法律/目标；
 · 国策字段读取本国焦点树，可搜索下拉、手写、留空；
 · 参谋模式不输出 [ACTION]、不生成命令、行动按钮禁用；
@@ -1023,7 +1061,8 @@ function Add-Welcome {
         @(
             @{ text = '分析局势'; say = '帮我分析一下当前局势，我接下来该怎么走？' },
             @{ text = '谈结盟'; say = '我们结盟怎么样？你想要什么条件？' },
-            @{ text = '施压'; say = '如果你不答应，我会考虑用武力解决。' }
+            @{ text = '施压'; say = '如果你不答应，我会考虑用武力解决。' },
+            @{ text = '主动提议'; say = '不用等我问。根据当前局势，主动提出下一步配合计划：你准备做什么、希望我做什么、你能给我什么。' }
         )
     }
     $script:quickButtons.Clear()
@@ -2651,15 +2690,21 @@ $contextText
 "@
     } else {
         $system = @"
-你是《钢铁雄心4》中由 AI 扮演的 $($state.country)（$tag）决策者。玩家扮演 $($script:player)，本局是「$($script:campaignTitle)」。
+你不是外交官，也不是只会回话的谈判 NPC。你是正在玩 $($state.country)（$tag）的玩家，这个国家由你控制；玩家是另一个玩家 $($script:player)，本局是「$($script:campaignTitle)」。
+你有自己的长期目标、国策方向、建军/扩张计划、底线和承诺。你会主动和玩家打配合，也会拒绝、提条件、改变自己的国策方向。
 当前国力：民用工厂 $($state.civ)，军工 $($state.mil)，船坞 $($state.dock)，师 $($state.div)，人力 $($state.manpower_k)K，舰船 $($state.ships)，飞机 $($state.planes)，$war。
 政治点 $($state.pp)，稳定度 $stabPct%，战争支持度 $wsPct%，科研槽 $($state.res)，阵营 $(if ($state.faction -eq '1') { '有' } else { '无' })。
 与玩家同阵营：$(if ($relForPrompt.inFactionWithPlayer) { '是' } else { '否' })；保障玩家：$(if ($relForPrompt.guaranteesPlayer) { '是' } else { '否' })；敌国数量：$($relForPrompt.enemies)。
 本局摘要：$summary
 已知承诺：
 $ledgerText
-要求：用中文，像真实的国家决策者一样说话；可以谈判、拒绝、提条件、记仇，但不要跳出角色；不要编造数据里没有的精确数字。回答控制在 250 字以内。
-如果你明确同意一个具体行动，在回复最后单独一行输出一个标记；只能选一个，不真心同意就不要输出：
+要求：
+- 用中文，以“正在玩这个国家的玩家”身份说话，不是外交官；
+- 不要只回一句；每次至少给出：你下一步准备做什么、你希望玩家做什么、你能给玩家什么或需要玩家什么；
+- 可以主动提议、主动配合，不必等玩家问；
+- 不编造数据里没有的精确数字；不知道就问；
+- 国策方向可以改变；如果明确选择下一个国策，在回复最后单独一行输出 [FOCUS:焦点中文名或ID]，只能选一个；软件只会复制命令，不自动执行；
+- 如果你同意一个具体行动，在回复最后单独一行输出一个标记；只能选一个，不真心同意就不要输出：
 $aiActionText
 "@
     }
@@ -2690,8 +2735,30 @@ $aiActionText
             $actionId = $actionMatch.Groups[1].Value
             $reply = ($reply -replace '\s*\[ACTION:[^\]]+\]\s*', '').Trim()
         }
+        $focusId = $null
+        $focusName = $null
+        $focusMatch = [regex]::Match($reply, '\[FOCUS:([^\]]+)\]')
+        if ($focusMatch.Success -and -not $script:advisorMode) {
+            $focusNeedle = $focusMatch.Groups[1].Value.Trim()
+            $focusChoices = @(Get-FocusChoices $tag)
+            $focusChoice = $focusChoices | Where-Object {
+                $_.id -eq $focusNeedle -or $_.name -eq $focusNeedle -or $_.display -eq $focusNeedle -or $_.name -like "*$focusNeedle*"
+            } | Select-Object -First 1
+            $reply = ($reply -replace '\s*\[FOCUS:[^\]]+\]\s*', '').Trim()
+            if ($focusChoice) {
+                $focusId = [string]$focusChoice.id
+                $focusName = [string]$focusChoice.name
+            } else {
+                Add-SystemBubble "大肥鱼提到的国策「$focusNeedle」在本国焦点树里没找到，没有生成命令。" $UiMuted
+            }
+        }
         $speaker = if ($script:advisorMode) { '大肥鱼 · 参谋' } else { $state.country }
         Add-Bubble $speaker $reply $false ((Get-Date).ToString('HH:mm'))
+        if ($focusId) {
+            $focusCmd = "eval_effect $tag = { complete_national_focus = $focusId }"
+            try { Set-Clipboard -Value $focusCmd -ErrorAction Stop } catch { [Windows.Forms.Clipboard]::SetText($focusCmd) }
+            Add-SystemBubble "大肥鱼选了自己的国策方向：$focusName（$focusId）。命令已复制，回游戏粘贴；不自动执行。" $UiCyan
+        }
         if ($actionId) {
             $def = Get-ActionDef $actionId
             Add-SystemBubble "AI 同意采取行动：$($def.Name)。点左侧行动按钮生成命令，手动粘贴一次。" $UiCyan
