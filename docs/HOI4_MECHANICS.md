@@ -52,6 +52,10 @@ division_template = {
 }
 ```
 
+**重要实测（v1.3.1）**：把这段放进 `eval_effect TAG = { ... }`，控制台报
+`Had errors compiling the effect`，后面的 `dfy_log_state` 也不执行。说明“语法在 decision 文件里成立”不等于“运行时可 eval”。
+在找到 runtime 可用的包装前，模板功能保持关闭（`templates_enabled=false`）。
+
 ### 不能做
 
 - 没有“训练队列”effect。`set_division_force_allow_recruiting` 只是允许招募，不排训练。

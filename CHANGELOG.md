@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.1 — 2026-11-10
+
+- Phase 0 控制台保护：
+  - 用截图帧色检测控制台是否已开（关闭≈815，打开≈2708，阈值1500）；
+  - 已开不再按 `~`，未开才打开；
+  - 命令改为剪贴板 Ctrl+V 粘贴；
+  - 执行后验证关闭。
+- Phase 1 模板审计：
+  - `division_template` 在 `eval_effect` 运行时编译失败（Had errors compiling the effect）；
+  - 模板生成默认关闭，避免污染订单；
+  - `templates_enabled=false`，后续需换实现（mod 包装/其他 effect）再开。
+- 新苏联测试存档：玩家 SOV，配置已切 SOV。
+
 ## v1.3.0 — 2026-11-09
 
 - 新增 **本地规则规划器**，设置默认开启：

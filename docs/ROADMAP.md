@@ -35,6 +35,10 @@
 
 ## Phase 1：通用编制模板（先做 3 个）
 
+状态：**阻塞**。v1.3.1 实测 `division_template` 放进 `eval_effect` 报
+`Had errors compiling the effect`，后面的 state 也不执行。先保持模板功能关闭，
+需要换实现（mod 包装/其他 effect/UI 自动化）后再开。
+
 模板：
 
 | id | 名称 | 组成 | 支援 |

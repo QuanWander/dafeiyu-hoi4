@@ -91,6 +91,53 @@ function Get-AgentFocusList([string]$tag) {
     return ($rows -join "`n")
 }
 
+function Get-AgentTemplateDefs {
+    return @{
+        inf20 = [pscustomobject]@{
+            id = 'inf20'; name = 'DFY 步兵师'; label = 'DFY 步兵师（7步兵+2炮兵）'
+            regiments = @('infantry','infantry','infantry','infantry','infantry','infantry','infantry','artillery','artillery')
+            support = @('engineer','artillery')
+        }
+        marine20 = [pscustomobject]@{
+            id = 'marine20'; name = 'DFY 海军陆战队'; label = 'DFY 海军陆战队（7陆战+2炮兵）'
+            regiments = @('marines','marines','marines','marines','marines','marines','marines','artillery','artillery')
+            support = @('engineer','artillery')
+        }
+        armor20 = [pscustomobject]@{
+            id = 'armor20'; name = 'DFY 装甲师'; label = 'DFY 装甲师（6坦克+4摩托化）'
+            regiments = @('tank','tank','tank','tank','tank','tank','motorized','motorized','motorized','motorized')
+            support = @('engineer','maintenance')
+        }
+    }
+}
+
+function Get-AgentTemplateCommand([string]$tag, [string]$templateId) {
+    $defs = Get-AgentTemplateDefs
+    if (-not $defs.ContainsKey($templateId)) { return '' }
+    $d = $defs[$templateId]
+    $regs = @()
+    $i = 0
+    foreach ($unit in $d.regiments) {
+        $x = [int]([math]::Floor($i / 5))
+        $y = $i % 5
+        $regs += "$unit = { x = $x y = $y }"
+        $i++
+    }
+    $sup = @()
+    $i = 0
+    foreach ($unit in $d.support) {
+        $sup += "$unit = { x = 0 y = $i }"
+        $i++
+    }
+    return "eval_effect $tag = { division_template = { name = `"$($d.name)`" is_locked = no priority = 1 regiments = { $($regs -join ' ') } support = { $($sup -join ' ') } } }"
+}
+
+function Get-AgentTemplateList {
+    $rows = @()
+    foreach ($d in (Get-AgentTemplateDefs).Values) { $rows += "- $($d.id) | $($d.label) | 只添加编制模板，不训练" }
+    return ($rows -join "`n")
+}
+
 function Get-LocalAgentPlan([string]$tag, [bool]$forPlayer, [string]$goal) {
     $s = $script:states[$tag]
     if (-not $s) { return $null }
@@ -292,6 +339,7 @@ function Invoke-AgentWeek {
     $script:agentAutoLast = Get-Date
     $allowed = Get-AgentActionList $forPlayer
     $focusList = Get-AgentFocusList $tag
+    $templateList = if ($script:cfg.templates_enabled) { Get-AgentTemplateList } else { '（模板功能未启用：当前版本运行时编译未通过）' }
     $notes = Get-AgentNotes $tag
     if (-not $notes) { $notes = '暂无长期笔记。' }
     $goal = Get-AgentGoal $tag
@@ -327,13 +375,17 @@ $allowed
 国策候选（只能选一个；id 或准确名称都行；没有合适就留空）：
 $focusList
 
+编制模板候选（可选一个；只添加模板，不训练；不需要就留空）：
+$templateList
+
 输出严格 JSON，不要 markdown：
-{"report":"一句话说明本周计划","goal":"更新后的本局愿景（从玩家对话提炼；没有变化就保留旧愿景）","brief":["本周第一件事","第二件事","第三件事"],"focus":"国策id或准确名称，可为空","notes":"更新后的长期笔记（战略目标/承诺/当前重点）","actions":[{"id":"动作id","target":"目标国家代码，可为空","amount":1,"text":"文本参数，可为空","reason":"为什么"}]}
+{"report":"一句话说明本周计划","goal":"更新后的本局愿景（从玩家对话提炼；没有变化就保留旧愿景）","brief":["本周第一件事","第二件事","第三件事"],"focus":"国策id或准确名称，可为空","template":"模板id，可为空","notes":"更新后的长期笔记（战略目标/承诺/当前重点）","actions":[{"id":"动作id","target":"目标国家代码，可为空","amount":1,"text":"文本参数，可为空","reason":"为什么"}]}
 
 规则：
 - report 只一句话；brief 最多 3 条，写具体动作，不复述全部数据；
 - 如果愿景要求走某条线，优先从国策候选里选一个匹配的 focus；
 - 没有合适国策就 focus 留空；
+- 编制模板只选一个，且只在真的需要新建模板时选；不要每周重复；
 - actions 最多 6 个；
 - 只能选上面列出的动作；
 - 需要 target 的必须填真实国家代码；需要 amount 的填整数；需要 text 的按动作要求填；
@@ -364,6 +416,20 @@ $focusList
         $orders = New-Object System.Collections.ArrayList
         $seen = @{}
         $focusNote = ''
+        $templateNote = ''
+        $templateValue = [string]$data.template
+        if ($script:cfg.templates_enabled -and $templateValue -and $recent -notcontains 'agent_template') {
+            $templateCmd = Get-AgentTemplateCommand $tag $templateValue
+            if ($templateCmd) {
+                [void]$orders.Add([pscustomobject]@{
+                    id = 'agent_template'
+                    command = $templateCmd
+                    reason = "编制模板：$templateValue"
+                })
+                $seen['agent_template'] = $true
+                $templateNote = "编制模板：$templateValue"
+            }
+        }
         $focusValue = [string]$data.focus
         if ($focusValue) {
             $focusChoices = @(Get-FocusChoices $tag)
@@ -462,7 +528,7 @@ $focusList
         $nextStep = if ($autoDone) { '' } else { '回游戏按 ~，粘贴 run dfy_orders.txt 执行；不自动运行。' }
         $goalShort = if ($newGoal.Length -gt 120) { $newGoal.Substring(0, 120) + '...' } else { $newGoal }
         $briefText = (@($data.brief) | Where-Object { $_ } | Select-Object -First 3) -join "`r`n"
-        Add-SystemBubble "$weekTitle：$report`r`n愿景：$goalShort`r`n$focusNote`r`n本周三件事：`r`n$briefText`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
+        Add-SystemBubble "$weekTitle：$report`r`n愿景：$goalShort`r`n$focusNote`r`n$templateNote`r`n本周三件事：`r`n$briefText`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
         try {
             $line = "$(Get-Date -Format 's')`tweek`ttokens=$($result.Tokens)`tactions=$($orders.Count)`t$($commands -join ' || ')"
             Add-Content -LiteralPath $script:AgentLog -Value $line -Encoding UTF8

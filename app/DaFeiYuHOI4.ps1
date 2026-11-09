@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '1.3.0'
+$script:appVersion = '1.3.1'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -392,7 +392,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 }
 
 function Read-Config {
-    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true; auto_agent = $true; auto_player = $false; local_plan = $true }
+    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true; auto_agent = $true; auto_player = $false; local_plan = $true; templates_enabled = $false }
     if (Test-Path -LiteralPath $ConfigFile) {
         try {
             $saved = Get-Content -LiteralPath $ConfigFile -Raw | ConvertFrom-Json
@@ -406,6 +406,7 @@ function Read-Config {
             if ($null -ne $saved.auto_agent) { $cfg.auto_agent = [bool]$saved.auto_agent }
             if ($null -ne $saved.auto_player) { $cfg.auto_player = [bool]$saved.auto_player }
             if ($null -ne $saved.local_plan) { $cfg.local_plan = [bool]$saved.local_plan }
+            if ($null -ne $saved.templates_enabled) { $cfg.templates_enabled = [bool]$saved.templates_enabled }
         } catch {}
     }
     return $cfg
