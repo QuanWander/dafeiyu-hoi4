@@ -1,10 +1,11 @@
 name="DaFeiYu HOI4"
-version="0.9.31"
+version="0.9.32"
 supported_version="1.19.*"
 tags={
 	"Gameplay"
 	"Utilities"
 }
+
 
 
 

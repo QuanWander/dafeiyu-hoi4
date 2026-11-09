@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.31'
+$script:appVersion = '0.9.32'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -134,6 +134,16 @@ eval_effect ENG = { add_to_faction = GER }
 · 游戏必须用 -debug_mode 启动（app 的“启动游戏”已带）；
 · 自动执行前控制台必须处于关闭状态（~ 是切换键）；
 · 软件执行失败会回退 HID/手动。
+
+### 自动托管（P2）
+
+左侧“自动托管：开”会在检测到选中 AI 国家出现新的 DFY|state 快照时，
+自动执行一次“托管一周”，不需要再点按钮。
+
+· 首次启动只记录当前快照作为基线，不会立刻下单；
+· 下一周新快照出现才触发；
+· 手动点“托管一周”也会更新基线，避免重复；
+· 不想花 API 时点成“自动托管：关”。
 
 它不做：
 · 不直接改游戏内存；
@@ -375,7 +385,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 }
 
 function Read-Config {
-    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true }
+    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true; auto_agent = $true }
     if (Test-Path -LiteralPath $ConfigFile) {
         try {
             $saved = Get-Content -LiteralPath $ConfigFile -Raw | ConvertFrom-Json
@@ -386,6 +396,7 @@ function Read-Config {
             if ($saved.hid_port) { $cfg.hid_port = [string]$saved.hid_port }
             if ($null -ne $saved.hid_auto) { $cfg.hid_auto = [bool]$saved.hid_auto }
             if ($null -ne $saved.input_auto) { $cfg.input_auto = [bool]$saved.input_auto }
+            if ($null -ne $saved.auto_agent) { $cfg.auto_agent = [bool]$saved.auto_agent }
         } catch {}
     }
     return $cfg
@@ -1204,6 +1215,7 @@ function Read-Log {    if (-not (Test-Path -LiteralPath $LogPath)) { return }
                 foreach ($part in $parts) {
                     if ($part -match '^([^=]+)=(.*)$') { $state[$Matches[1]] = $Matches[2] }
                 }
+                if ($line -match '^\[[^\]]+\]\[([^\]]+)\]') { $state.dateText = $Matches[1] }
                 if ($state.tag) {
                     $script:states[$state.tag] = $state
                     $script:factionMembers[$state.tag] = @()
@@ -1299,6 +1311,8 @@ function Update-Controls {
     $btnActions.Enabled = -not $script:advisorMode
     $btnAdvisorInfo.Visible = $script:advisorMode
     $btnAgent.Enabled = -not $script:advisorMode
+    $btnAuto.Enabled = -not $script:advisorMode
+    $btnAuto.Text = if ($script:cfg.auto_agent) { '自动托管：开' } else { '自动托管：关' }
     $items = @($comboAI.Items | ForEach-Object { ([string]$_).Substring(0, 3) })
     if (($tags -join ',') -ne ($items -join ',')) {
         $current = Get-SelectedTag
@@ -1343,6 +1357,8 @@ function Update-Controls {
     if ($script:thinking) {
         $dots = '.' * (([int]((Get-Date).Millisecond / 250)) % 4 + 1)
         $lblStatus.Text = "正在思考$dots"
+    } else {
+        Invoke-AgentAutoTick
     }
 }
 
@@ -3060,6 +3076,15 @@ $btnAgent.Add_Click({
     try { Invoke-AgentWeek } catch {
         [Windows.Forms.MessageBox]::Show(($_.Exception.Message), '托管一周失败')
     }
+})
+
+$btnAuto = New-FlatButton '自动托管：开' 155 556 125 36 $UiCard
+$sidebar.Controls.Add($btnAuto)
+$btnAuto.Add_Click({
+    $script:cfg.auto_agent = -not $script:cfg.auto_agent
+    Save-Config $script:cfg
+    $btnAuto.Text = if ($script:cfg.auto_agent) { '自动托管：开' } else { '自动托管：关' }
+    $lblStatus.Text = if ($script:cfg.auto_agent) { '自动托管已开启：新周快照自动下单。' } else { '自动托管已关闭。' }
 })
 
 $lblCampaign = New-Object System.Windows.Forms.Label

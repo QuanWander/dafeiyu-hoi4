@@ -117,6 +117,38 @@ function Get-AgentRecentActions([string]$tag) {
     return @($store[$key].actions | ForEach-Object { [string]$_.id })
 }
 
+$script:agentAutoTag = ''
+$script:agentAutoDate = ''
+$script:agentRunning = $false
+
+function Invoke-AgentAutoTick {
+    if (-not $script:cfg.auto_agent) { return }
+    if ($script:agentRunning) { return }
+    if ($script:thinking) { return }
+    if ($script:advisorMode) { return }
+    if (-not $script:key) { return }
+    $tag = Get-SelectedTag
+    if (-not $tag -or -not $script:states.ContainsKey($tag)) { return }
+    if (-not (Test-DfyHoi4DebugMode)) { return }
+    $date = [string]$script:states[$tag].dateText
+    if (-not $date) { return }
+    if ($tag -ne $script:agentAutoTag) {
+        $script:agentAutoTag = $tag
+        $script:agentAutoDate = $date
+        return
+    }
+    if ($date -eq $script:agentAutoDate) { return }
+    $script:agentAutoDate = $date
+    $script:agentRunning = $true
+    try {
+        Invoke-AgentWeek
+    } catch {
+        Add-SystemBubble ("自动托管失败：" + $_.Exception.Message) $UiRed
+    } finally {
+        $script:agentRunning = $false
+    }
+}
+
 function Invoke-AgentWeek {
     if (-not $script:key) {
         Show-Settings
@@ -131,6 +163,7 @@ function Invoke-AgentWeek {
         [Windows.Forms.MessageBox]::Show('还没有 AI 国家状态。先启动游戏，等一周。', '没有状态')
         return
     }
+    $stateDate = [string]$script:states[$tag].dateText
     $allowed = Get-AgentActionList
     $notes = Get-AgentNotes $tag
     if (-not $notes) { $notes = '暂无长期笔记。' }
@@ -248,6 +281,8 @@ $allowed
         }
         $newNotes = if ($data.notes) { [string]$data.notes } else { $notes }
         Set-AgentRecord $tag $newNotes @($orders)
+        $script:agentAutoTag = $tag
+        $script:agentAutoDate = $stateDate
         $report = if ($data.report) { [string]$data.report } else { '已生成订单。' }
         try { Set-Clipboard -Value 'run dfy_orders.txt' -ErrorAction Stop } catch { [Windows.Forms.Clipboard]::SetText('run dfy_orders.txt') }
         $fileText = if ($files.Count) { ($files -join '；') } else { '未能写入文件' }
