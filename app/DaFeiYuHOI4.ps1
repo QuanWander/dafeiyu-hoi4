@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.33'
+$script:appVersion = '1.0.0'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -38,11 +38,12 @@ $script:helpSections = [ordered]@{
     '第一次使用' = @"
 ## 第一次使用
 
-1. 打开 HOI4，选你想玩的国家，正常开局。
-2. 在游戏里过一周，让配套 mod 写下第一批状态。
+1. 用软件左侧“启动游戏”启动 HOI4（必须带 -debug_mode）。
+2. 选你想玩的国家，正常开局，过一周，让 mod 写下状态。
 3. 打开桌面“大肥鱼 HOI4”，左侧会自动识别你玩的国家。
-4. 想让 AI 扮演别的国家：在“AI 国家”里选一个非玩家国家，然后说话。她会当自己正在玩这个国家。
-5. 想让大肥鱼当你的参谋：点右上角“同国参谋”，再点“资料”补充国策/生产/编制。
+4. 想让 AI 扮演别的国家：在“AI 国家”里选一个非玩家国家，然后说话。
+5. 想让她自己过周：保持“自动托管：开”；也可以手动点“托管一周”。
+6. 想让大肥鱼当你的参谋：点右上角“同国参谋”，再点“资料”。
 
 如果软件把你玩的国家认错了：
 点“你：ITA”旁边的 **改**，手动选你实际玩的国家；
@@ -339,6 +340,13 @@ A：看下一周国力卡/关系是否变化；可能条件不满足。
 Q：请求失败 401 / 422？
 A：401 是 Key 或余额；422 是消息格式，升级到最新版。
 
+Q：自动执行失败？
+A：看左侧状态：
+   · “控制台就绪”= 游戏带 -debug_mode；
+   · “缺少 -debug_mode”= 用软件“启动游戏”重启；
+   · 控制台必须关闭（~ 是切换键）；
+   · 失败会回退 HID/手动，不会静默。
+
 Q：能中途换玩家国吗？
 A：游戏本身不支持；换国请新开档。
 
@@ -356,28 +364,20 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
     '本版更新' = @"
 ## 本版更新：v$($script:appVersion)
 
-· 新增 **同国参谋（A）**：右上角开关，切到玩家国视角；
-· 普通 AI 模式改成“她正在玩这个国家”，会主动配合、提计划、改变国策方向；
-· 新增快捷问法“主动提议”和 `[FOCUS:...]` 国策标记；
-· 新增“托管一周”：生成校验后的 dfy_orders.txt，不自动执行；
-· 新增参谋资料面板：国策/科研/建造/生产/编制/法律/目标；
-· 国策字段读取本国焦点树，可搜索下拉、手写、留空；
-· 参谋模式不输出 [ACTION]、不生成命令、行动按钮禁用；
-· 修复左上角标题/副标题被 300px 侧栏裁切；
-· 新增软件内帮助中心，首次启动自动弹出一次；
-· 主界面常驻“帮助”按钮；
-· 游戏内指令、行动验证、记忆、隐私、卸载都有说明；
-· 帮助内容跟随版本更新，本页就是当前版；
-· 行动扩到 50 条：外交/阵营/经济/科研/政治/军事/强制/对玩家/国家；
-· 下单窗口改成“先选类别，再选指令”，默认常用 10 条；
-· 玩家可主动下令，不必等 AI 同意；高风险标红；
-· 新增强制附庸/吞并/拉阵营/退阵营/通行，极高风险二次确认；
-· 新增对玩家：通行、邀请/逼退阵营、送装备/燃料/政治点/指挥点/人力、打压稳定/战争支持；
-· 新增国家：转州、州宣称、设核心、完成焦点、加国家精神；需要手填 ID；
-· 新增自定义 effect 指令，{AI}/{PLAYER} 占位；
-· 修复玩家国识别：优先读 continue_game，跳过二进制存档误匹配；
-· 玩家国旁边新增“改”，识别错了可手动指定；
-· 游戏在跑但 mod 没加载时，直接提示 Active Mod Count 0。
+· **1.0：大肥鱼从“会聊天的 AI 国家”变成“会自己过周的 AI 玩家”**；
+· 新增自动托管：新周快照自动规划、写订单、切前台执行 run；
+· 修正 x64 INPUT 结构（32→40 字节），SendInput 可用；
+· 自动执行前要求 -debug_mode，且控制台关闭；
+· 自动失败回退 HID/手动；HID 为可选兜底；
+· 自动托管 25 秒冷却，避免高速跑周追 backlog；
+· 普通 AI 模式：她认为自己在玩这个国家，会主动配合、提计划、改国策方向；
+· 新增“主动提议”快捷问法；
+· 新增 `[FOCUS:...]` 国策标记，核对焦点树后才生成命令；
+· 同国参谋（A）：看玩家国，资料面板、国策下拉；
+· 50 条行动，10 个类别；高风险二次确认；
+· 记忆：摘要、承诺、最近行动；
+· 铁血 UI：炭黑/氧化铁红/黄铜/钢灰；控制台状态、自动托管状态；
+· 修复标题/国家标签裁切、强制目标下拉重置、投资假日志。
 
 遇到没写到的情况：
 点“复制诊断信息”，把版本、路径、状态一起发出来。
@@ -1092,7 +1092,7 @@ function Add-Welcome {
     $card.Controls.Add($heading)
 
     $hint = New-Object System.Windows.Forms.Label
-    $hint.Text = if ($advisor) { '她看你的国家，给国策、内政、编制和战争建议。' } else { '它会看自己的工厂、师、船和战争状态，也会记住你答应过什么。' }
+    $hint.Text = if ($advisor) { '她看你的国家，给国策、内政、编制和战争建议。' } else { '她看自己的国家，会主动配合；新的一周会自动过周、下单。' }
     $hint.ForeColor = $UiMuted
     $hint.Location = New-Object Drawing.Point(96, 68)
     $hint.Size = New-Object Drawing.Size(460, 22)
@@ -1281,7 +1281,7 @@ function Update-StateCard {
     $rel = Get-Relations $tag
     $lblDiplomacy.Text = "科研槽 $($s.res)   阵营 $factionText   敌国 $($rel.enemies)"
     $lblChatTitle.Text = if ($script:advisorMode) { '同国参谋 · ' + $s.country } else { "$($s.country)  ·  $tag" }
-    $lblChatSub.Text = if ($script:advisorMode) { '大肥鱼看你的国家，给建议 · ' + $warText } else { "一个国家的耳语 · $warText · 档案已同步" }
+    $lblChatSub.Text = if ($script:advisorMode) { '大肥鱼看你的国家，给建议 · ' + $warText } else { "一个国家的耳语 · $warText · 自动托管$(if ($script:cfg.auto_agent) { '开' } else { '关' })" }
     $lblFlag.Text = $tag
     $lblFlag.Visible = $true
     $flag.BackColor = [Drawing.Color]::FromArgb(78, 67, 52)
@@ -1313,6 +1313,7 @@ function Update-Controls {
     $btnAgent.Enabled = -not $script:advisorMode
     $btnAuto.Enabled = -not $script:advisorMode
     $btnAuto.Text = if ($script:cfg.auto_agent) { '自动托管：开' } else { '自动托管：关' }
+    $btnAuto.BackColor = if ($script:cfg.auto_agent) { [Drawing.Color]::FromArgb(74, 98, 82) } else { $UiCard }
     $items = @($comboAI.Items | ForEach-Object { ([string]$_).Substring(0, 3) })
     if (($tags -join ',') -ne ($items -join ',')) {
         $current = Get-SelectedTag
@@ -1347,9 +1348,11 @@ function Update-Controls {
         Update-ActionHistory $selectedTag $script:states[$selectedTag]
     }
     $game = [bool](Get-Process hoi4 -ErrorAction SilentlyContinue)
-    $lblGame.Text = if ($game) { '● 游戏运行中' } else { '● 游戏未运行' }
+    $debugReady = $false
+    if ($game) { $debugReady = Test-DfyHoi4DebugMode }
+    $lblGame.Text = if (-not $game) { '● 游戏未运行' } elseif ($debugReady) { '● 游戏运行中 · 控制台就绪' } else { '● 运行中 · 缺少 -debug_mode' }
     $lblGame.ForeColor = [Drawing.Color]::White
-    $lblGame.BackColor = if ($game) { [Drawing.Color]::FromArgb(74, 98, 82) } else { [Drawing.Color]::FromArgb(74, 98, 82) }
+    $lblGame.BackColor = if (-not $game) { [Drawing.Color]::FromArgb(74, 98, 82) } elseif ($debugReady) { [Drawing.Color]::FromArgb(74, 98, 82) } else { [Drawing.Color]::FromArgb(120, 76, 42) }
     $lblPlayer.Text = "你：$($script:player)" + $(if ($script:cfg.player_override) { ' · 手动' } else { '' })
     $lblCampaign.Text = "本局：$($script:campaignTitle)"
     $lblTokens.Text = "本次会话 tokens：$($script:tokens)"
@@ -2977,7 +2980,7 @@ $lblGame.ForeColor = $UiText
 $lblGame.BackColor = [Drawing.Color]::FromArgb(74, 98, 82)
 $lblGame.TextAlign = 'MiddleCenter'
 $lblGame.Location = New-Object Drawing.Point(22, 128)
-$lblGame.Size = New-Object Drawing.Size(120, 22)
+$lblGame.Size = New-Object Drawing.Size(300, 22)
 Set-Rounded $lblGame 8
 $sidebar.Controls.Add($lblGame)
 
@@ -3084,28 +3087,29 @@ $btnAuto.Add_Click({
     $script:cfg.auto_agent = -not $script:cfg.auto_agent
     Save-Config $script:cfg
     $btnAuto.Text = if ($script:cfg.auto_agent) { '自动托管：开' } else { '自动托管：关' }
+    $btnAuto.BackColor = if ($script:cfg.auto_agent) { [Drawing.Color]::FromArgb(74, 98, 82) } else { $UiCard }
     $lblStatus.Text = if ($script:cfg.auto_agent) { '自动托管已开启：新周快照自动下单。' } else { '自动托管已关闭。' }
 })
 
 $lblCampaign = New-Object System.Windows.Forms.Label
 $lblCampaign.Text = '本局：—'
 $lblCampaign.ForeColor = $UiMuted
-$lblCampaign.Location = New-Object Drawing.Point(22, 550)
-$lblCampaign.Size = New-Object Drawing.Size(256, 30)
+$lblCampaign.Location = New-Object Drawing.Point(22, 606)
+$lblCampaign.Size = New-Object Drawing.Size(300, 30)
 $sidebar.Controls.Add($lblCampaign)
 
 $lblTokens = New-Object System.Windows.Forms.Label
 $lblTokens.Text = '本次会话 tokens：0'
 $lblTokens.ForeColor = $UiMuted
-$lblTokens.Location = New-Object Drawing.Point(22, 584)
-$lblTokens.Size = New-Object Drawing.Size(256, 20)
+$lblTokens.Location = New-Object Drawing.Point(22, 642)
+$lblTokens.Size = New-Object Drawing.Size(300, 20)
 $sidebar.Controls.Add($lblTokens)
 
 $lblVersion = New-Object System.Windows.Forms.Label
 $lblVersion.Text = "v$($script:appVersion) · 独立版"
 $lblVersion.ForeColor = [Drawing.Color]::FromArgb(102, 104, 100)
-$lblVersion.Location = New-Object Drawing.Point(22, 630)
-$lblVersion.Size = New-Object Drawing.Size(256, 20)
+$lblVersion.Location = New-Object Drawing.Point(22, 676)
+$lblVersion.Size = New-Object Drawing.Size(300, 20)
 $sidebar.Controls.Add($lblVersion)
 
 $flag = New-Object System.Windows.Forms.Panel
