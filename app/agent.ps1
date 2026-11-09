@@ -31,10 +31,18 @@ function Get-AgentNotes([string]$tag) {
     return ''
 }
 
-function Set-AgentRecord([string]$tag, [string]$notes, $actions) {
+function Get-AgentGoal([string]$tag) {
+    $store = Get-AgentStore
+    $key = Get-AgentKey $tag
+    if ($store.ContainsKey($key) -and $store[$key].goal) { return [string]$store[$key].goal }
+    return ''
+}
+
+function Set-AgentRecord([string]$tag, [string]$notes, $actions, [string]$goal = '') {
     $store = Get-AgentStore
     $store[(Get-AgentKey $tag)] = [pscustomobject]@{
         notes = $notes
+        goal = $goal
         week = 0
         updated = (Get-Date).ToString('s')
         actions = @($actions)
@@ -128,10 +136,13 @@ $script:agentAutoLast = [datetime]::MinValue
 $script:agentRunning = $false
 
 function Invoke-AgentAutoTick {
-    if (-not $script:cfg.auto_agent) { return }
     if ($script:agentRunning) { return }
     if ($script:thinking) { return }
-    if ($script:advisorMode) { return }
+    if ($script:advisorMode) {
+        if (-not $script:cfg.auto_player) { return }
+    } else {
+        if (-not $script:cfg.auto_agent) { return }
+    }
     if (((Get-Date) - $script:agentAutoLast).TotalSeconds -lt 25) { return }
     if (-not $script:key) { return }
     $tag = Get-SelectedTag
@@ -178,6 +189,8 @@ function Invoke-AgentWeek {
     $allowed = Get-AgentActionList $forPlayer
     $notes = Get-AgentNotes $tag
     if (-not $notes) { $notes = '暂无长期笔记。' }
+    $goal = Get-AgentGoal $tag
+    if (-not $goal) { $goal = '暂无明确愿景；先问玩家想把国家带到哪里。' }
     $recent = @(Get-AgentRecentActions $tag)
     $recentText = if ($recent.Count) { $recent -join '、' } else { '无' }
     $stateText = Get-AgentStateText $tag
@@ -190,6 +203,8 @@ function Invoke-AgentWeek {
     }
     $prompt = @"
 $persona
+本局愿景（玩家预想的未来；从最近对话更新，没有新目标就保留旧愿景）：
+$goal
 当前状态（第 N 周开始时的快照，不是实时）：
 $stateText
 长期笔记：
@@ -205,7 +220,7 @@ $intent
 $allowed
 
 输出严格 JSON，不要 markdown：
-{"report":"一句话说明本周计划","notes":"更新后的长期笔记（战略目标/承诺/当前重点）","actions":[{"id":"动作id","target":"目标国家代码，可为空","amount":1,"text":"文本参数，可为空","reason":"为什么"}]}
+{"report":"一句话说明本周计划","goal":"更新后的本局愿景（从玩家对话提炼；没有变化就保留旧愿景）","notes":"更新后的长期笔记（战略目标/承诺/当前重点）","actions":[{"id":"动作id","target":"目标国家代码，可为空","amount":1,"text":"文本参数，可为空","reason":"为什么"}]}
 
 规则：
 - actions 最多 6 个；
@@ -297,7 +312,9 @@ $allowed
             }
         }
         $newNotes = if ($data.notes) { [string]$data.notes } else { $notes }
-        Set-AgentRecord $tag $newNotes @($orders)
+        $newGoal = if ($data.goal) { [string]$data.goal } else { $goal }
+        if ($newGoal.Length -gt 500) { $newGoal = $newGoal.Substring(0, 500) }
+        Set-AgentRecord $tag $newNotes @($orders) $newGoal
         $script:agentAutoTag = $tag
         $script:agentAutoDate = [string]$script:states[$tag].dateText
         $script:agentAutoLast = Get-Date
@@ -305,7 +322,8 @@ $allowed
         try { Set-Clipboard -Value 'run dfy_orders.txt' -ErrorAction Stop } catch { [Windows.Forms.Clipboard]::SetText('run dfy_orders.txt') }
         $fileText = if ($files.Count) { ($files -join '；') } else { '未能写入文件' }
         $nextStep = if ($autoDone) { '' } else { '回游戏按 ~，粘贴 run dfy_orders.txt 执行；不自动运行。' }
-        Add-SystemBubble "$weekTitle：$report`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
+        $goalShort = if ($newGoal.Length -gt 120) { $newGoal.Substring(0, 120) + '...' } else { $newGoal }
+        Add-SystemBubble "$weekTitle：$report`r`n愿景：$goalShort`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
         try {
             $line = "$(Get-Date -Format 's')`tweek`ttokens=$($result.Tokens)`tactions=$($orders.Count)`t$($commands -join ' || ')"
             Add-Content -LiteralPath $script:AgentLog -Value $line -Encoding UTF8
