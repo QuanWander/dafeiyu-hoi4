@@ -68,6 +68,14 @@ function Get-AgentStateText([string]$tag) {
 "@
 }
 
+function Get-AgentFocusList([string]$tag) {
+    $choices = @(Get-FocusChoices $tag)
+    if ($choices.Count -eq 0) { return '' }
+    $rows = @()
+    foreach ($c in $choices) { $rows += "- $($c.id) | $($c.name)" }
+    return ($rows -join "`n")
+}
+
 function Get-AgentActionList([bool]$forPlayer = $false) {
     $rows = @()
     foreach ($id in $script:actionDefs.Keys) {
@@ -187,6 +195,7 @@ function Invoke-AgentWeek {
     $stateDate = [string]$script:states[$tag].dateText
     $script:agentAutoLast = Get-Date
     $allowed = Get-AgentActionList $forPlayer
+    $focusList = Get-AgentFocusList $tag
     $notes = Get-AgentNotes $tag
     if (-not $notes) { $notes = '暂无长期笔记。' }
     $goal = Get-AgentGoal $tag
@@ -219,10 +228,16 @@ $intent
 只能从下面动作中选，不能编造动作：
 $allowed
 
+国策候选（只能选一个；id 或准确名称都行；没有合适就留空）：
+$focusList
+
 输出严格 JSON，不要 markdown：
-{"report":"一句话说明本周计划","goal":"更新后的本局愿景（从玩家对话提炼；没有变化就保留旧愿景）","notes":"更新后的长期笔记（战略目标/承诺/当前重点）","actions":[{"id":"动作id","target":"目标国家代码，可为空","amount":1,"text":"文本参数，可为空","reason":"为什么"}]}
+{"report":"一句话说明本周计划","goal":"更新后的本局愿景（从玩家对话提炼；没有变化就保留旧愿景）","brief":["本周第一件事","第二件事","第三件事"],"focus":"国策id或准确名称，可为空","notes":"更新后的长期笔记（战略目标/承诺/当前重点）","actions":[{"id":"动作id","target":"目标国家代码，可为空","amount":1,"text":"文本参数，可为空","reason":"为什么"}]}
 
 规则：
+- report 只一句话；brief 最多 3 条，写具体动作，不复述全部数据；
+- 如果愿景要求走某条线，优先从国策候选里选一个匹配的 focus；
+- 没有合适国策就 focus 留空；
 - actions 最多 6 个；
 - 只能选上面列出的动作；
 - 需要 target 的必须填真实国家代码；需要 amount 的填整数；需要 text 的按动作要求填；
@@ -245,6 +260,26 @@ $allowed
         $data = $match.Value | ConvertFrom-Json
         $orders = New-Object System.Collections.ArrayList
         $seen = @{}
+        $focusNote = ''
+        $focusValue = [string]$data.focus
+        if ($focusValue) {
+            $focusChoices = @(Get-FocusChoices $tag)
+            $focusChoice = $focusChoices | Where-Object {
+                $_.id -eq $focusValue -or $_.name -eq $focusValue -or $_.display -eq $focusValue -or $_.name -like "*$focusValue*"
+            } | Select-Object -First 1
+            if ($focusChoice) {
+                $focusCmd = "eval_effect $tag = { complete_national_focus = $($focusChoice.id) }"
+                [void]$orders.Add([pscustomobject]@{
+                    id = 'agent_focus'
+                    command = $focusCmd
+                    reason = "愿景国策：$($focusChoice.name)"
+                })
+                $seen['agent_focus'] = $true
+                $focusNote = "本周国策：$($focusChoice.name)"
+            } else {
+                $focusNote = "愿景里的国策「$focusValue」不在本国焦点树，未生成。"
+            }
+        }
         foreach ($item in @($data.actions)) {
             if ($orders.Count -ge 6) { break }
             $id = [string]$item.id
@@ -323,7 +358,8 @@ $allowed
         $fileText = if ($files.Count) { ($files -join '；') } else { '未能写入文件' }
         $nextStep = if ($autoDone) { '' } else { '回游戏按 ~，粘贴 run dfy_orders.txt 执行；不自动运行。' }
         $goalShort = if ($newGoal.Length -gt 120) { $newGoal.Substring(0, 120) + '...' } else { $newGoal }
-        Add-SystemBubble "$weekTitle：$report`r`n愿景：$goalShort`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
+        $briefText = (@($data.brief) | Where-Object { $_ } | Select-Object -First 3) -join "`r`n"
+        Add-SystemBubble "$weekTitle：$report`r`n愿景：$goalShort`r`n$focusNote`r`n本周三件事：`r`n$briefText`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
         try {
             $line = "$(Get-Date -Format 's')`tweek`ttokens=$($result.Tokens)`tactions=$($orders.Count)`t$($commands -join ' || ')"
             Add-Content -LiteralPath $script:AgentLog -Value $line -Encoding UTF8

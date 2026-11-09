@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $AppData = Join-Path $env:LOCALAPPDATA 'DaFeiYuHOI4'
@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '1.1.0'
+$script:appVersion = '1.2.0'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -252,6 +252,8 @@ eval_effect ENG = { add_to_faction = GER }
 A 默认是参谋：给建议、优先级、代价和风险。
 A 也可以**托管玩家一周**：你点按钮后，软件按你最近的对话和资料，为玩家国生成并执行一单订单。
 A 还可以开**连续托管**：新周快照自动托管玩家国；默认关闭，需你手动开启。
+愿景匹配时，会从真实焦点树选国策并生成 `complete_national_focus`；
+气泡会给出“愿景 / 本周国策 / 本周三件事”，减少信息过载。
 不自动排生产线、不移动部队。
 
 ### A 下一步可做

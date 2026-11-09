@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.0 — 2026-11-09
+
+- A 愿景托管升级：
+  - 从真实焦点树选国策，生成 `complete_national_focus`；
+  - 气泡输出“愿景 / 本周国策 / 本周三件事”；
+  - 规划 prompt 要求 brief 最多 3 条，减少信息过载。
+- 实测订单出现 `eval_effect ENG = { complete_national_focus = uk_mediterranean_focus }`。
+- 连续托管会按新周快照持续运行；仍 25 秒冷却。
+- 已知：编制模板/训练/海空军任务尚未接入；官方 effect 无“设置任务”接口。
+
 ## v1.1.0 — 2026-11-09
 
 - 同国参谋 A 支持**连续托管**：新周快照自动托管玩家国；默认关闭，手动开启。
