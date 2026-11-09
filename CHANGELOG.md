@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.9.26 — 2026-11-09
+
+- 修复投资 effect 的假日志：`invest_civ/mil/dock/infra` 的 `log` 原来写在随机州外面，即使没加到工厂也会记成功。
+- 现在 `log` 只在真的加建筑后写，tag 用 `ROOT.GetTag`。
+- FRA 实测：invest_mil 后军工仍 8，确认旧日志是假阳性；需重启游戏加载新 mod 再用 `dfy_p1_fra_test.txt` 验证。
+- P0 仍通过；P1 单周不是完整通过。
+
 ## v0.9.25 — 2026-11-09
 
 - P0 已验证通过：`run dfy_p0_test.txt` 让 GER 政治点 4.324→6.324（+2），game.log 有 DFY|state。

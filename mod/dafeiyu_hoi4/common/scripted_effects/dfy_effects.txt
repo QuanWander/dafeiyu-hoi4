@@ -76,8 +76,8 @@ dfy_action_invest_civ = {
 			level = 1
 			instant_build = yes
 		}
+		log = "DFY|action|invest_civ|tag=[ROOT.GetTag]"
 	}
-	log = "DFY|action|invest_civ|tag=[THIS.GetTag]"
 }
 
 dfy_action_invest_mil = {
@@ -93,8 +93,8 @@ dfy_action_invest_mil = {
 			level = 1
 			instant_build = yes
 		}
+		log = "DFY|action|invest_mil|tag=[ROOT.GetTag]"
 	}
-	log = "DFY|action|invest_mil|tag=[THIS.GetTag]"
 }
 
 
@@ -111,8 +111,8 @@ dfy_action_invest_dock = {
 			level = 1
 			instant_build = yes
 		}
+		log = "DFY|action|invest_dock|tag=[ROOT.GetTag]"
 	}
-	log = "DFY|action|invest_dock|tag=[THIS.GetTag]"
 }
 
 dfy_action_invest_infra = {
@@ -128,6 +128,6 @@ dfy_action_invest_infra = {
 			level = 1
 			instant_build = yes
 		}
+		log = "DFY|action|invest_infra|tag=[ROOT.GetTag]"
 	}
-	log = "DFY|action|invest_infra|tag=[THIS.GetTag]"
 }
