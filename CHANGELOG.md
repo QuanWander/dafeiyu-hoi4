@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.30 — 2026-11-09
+
+- 新增 **硬件 HID 执行链**：
+  - `app/hid.ps1`：串口自动检测、`PING/RUN`、超时回退；
+  - `hid/pico/code.py`：Pico CircuitPython，真实 USB 键盘按 `~` + `run dfy_orders.txt`；
+  - `hid/leonardo/leonardo_hid.ino`：Leonardo/Pro Micro 版本；
+  - “托管一周”写完订单后，检测到板子就自动发 `RUN`；没有板子回退手动 `run`。
+- 不装内核驱动、不注入 DLL、不模拟用户态键盘。
+- 当前机器只有蓝牙串口，未检测到 HID 板；需 Pico/Leonardo 才能实测自动执行。
+
 ## v0.9.29 — 2026-11-09
 
 - 新增 `dfy_log_stock`：只读日志 `DFY|stock|tag=...|fuel_k=...|inf=...|support=...`。

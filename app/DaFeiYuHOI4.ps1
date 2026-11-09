@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.29'
+$script:appVersion = '0.9.30'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -31,6 +31,7 @@ $UiBubbleUser = [Drawing.Color]::FromArgb(82, 34, 30)
 
 . (Join-Path $PSScriptRoot 'actions.ps1')
 . (Join-Path $PSScriptRoot 'agent.ps1')
+. (Join-Path $PSScriptRoot 'hid.ps1')
 
 $script:helpSections = [ordered]@{
     '第一次使用' = @"
@@ -369,7 +370,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 }
 
 function Read-Config {
-    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = '' }
+    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true }
     if (Test-Path -LiteralPath $ConfigFile) {
         try {
             $saved = Get-Content -LiteralPath $ConfigFile -Raw | ConvertFrom-Json
@@ -377,6 +378,8 @@ function Read-Config {
             if ($saved.model) { $cfg.model = [string]$saved.model }
             if ($saved.help_seen) { $cfg.help_seen = [string]$saved.help_seen }
             if ($saved.player_override) { $cfg.player_override = [string]$saved.player_override }
+            if ($saved.hid_port) { $cfg.hid_port = [string]$saved.hid_port }
+            if ($null -ne $saved.hid_auto) { $cfg.hid_auto = [bool]$saved.hid_auto }
         } catch {}
     }
     return $cfg

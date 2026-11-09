@@ -223,12 +223,25 @@ $allowed
         }
         $commands = @($orders | ForEach-Object { $_.command })
         $files = Write-AgentOrders $commands
+        $hidText = '未检测到 HID 板，手动 run。'
+        if ($script:cfg.hid_auto) {
+            $hidPort = Find-DfyHidPort
+            if ($hidPort) {
+                try {
+                    Invoke-DfyHidRun | Out-Null
+                    $hidText = "HID 已自动执行（$hidPort）。"
+                } catch {
+                    $hidText = "HID 未执行：$($_.Exception.Message)；手动 run。"
+                }
+            }
+        }
         $newNotes = if ($data.notes) { [string]$data.notes } else { $notes }
         Set-AgentRecord $tag $newNotes @($orders)
         $report = if ($data.report) { [string]$data.report } else { '已生成订单。' }
         try { Set-Clipboard -Value 'run dfy_orders.txt' -ErrorAction Stop } catch { [Windows.Forms.Clipboard]::SetText('run dfy_orders.txt') }
         $fileText = if ($files.Count) { ($files -join '；') } else { '未能写入文件' }
-        Add-SystemBubble "托管一周：$report`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n回游戏按 ~，粘贴 run dfy_orders.txt 执行；不自动运行。" $UiCyan
+        $nextStep = if ($hidText -like 'HID 已自动执行*') { 'HID 已自动执行。' } else { '回游戏按 ~，粘贴 run dfy_orders.txt 执行；不自动运行。' }
+        Add-SystemBubble "托管一周：$report`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$hidText $nextStep" $UiCyan
         try {
             $line = "$(Get-Date -Format 's')`tweek`ttokens=$($result.Tokens)`tactions=$($orders.Count)`t$($commands -join ' || ')"
             Add-Content -LiteralPath $script:AgentLog -Value $line -Encoding UTF8

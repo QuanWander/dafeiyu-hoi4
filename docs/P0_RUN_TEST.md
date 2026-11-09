@@ -99,6 +99,16 @@ DFY|stock|tag=ENG|fuel_k=...|inf=...|support=...
 
 第二条的 `fuel_k` 应约 +10，`inf` 应 +1000。这个文件只加一次装备/燃料，用来验证，不是 P1 订单。
 
+### v0.9.29 实测结果（2026-11-09 22:32）
+
+```text
+DFY|stock|tag=ENG|fuel_k=151.91559|inf=0|support=1505
+DFY|stock|tag=ENG|fuel_k=161.91559|inf=1000|support=1505
+```
+
+燃料 +10（10000），步兵装备 +1000，支援装备不变。**库存回执通过。**
+
+
 
 
 
