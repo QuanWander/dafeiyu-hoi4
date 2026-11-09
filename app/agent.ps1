@@ -119,6 +119,7 @@ function Get-AgentRecentActions([string]$tag) {
 
 $script:agentAutoTag = ''
 $script:agentAutoDate = ''
+$script:agentAutoLast = [datetime]::MinValue
 $script:agentRunning = $false
 
 function Invoke-AgentAutoTick {
@@ -126,6 +127,7 @@ function Invoke-AgentAutoTick {
     if ($script:agentRunning) { return }
     if ($script:thinking) { return }
     if ($script:advisorMode) { return }
+    if (((Get-Date) - $script:agentAutoLast).TotalSeconds -lt 25) { return }
     if (-not $script:key) { return }
     $tag = Get-SelectedTag
     if (-not $tag -or -not $script:states.ContainsKey($tag)) { return }
@@ -139,6 +141,7 @@ function Invoke-AgentAutoTick {
     }
     if ($date -eq $script:agentAutoDate) { return }
     $script:agentAutoDate = $date
+    $script:agentAutoLast = Get-Date
     $script:agentRunning = $true
     try {
         Invoke-AgentWeek
@@ -164,6 +167,7 @@ function Invoke-AgentWeek {
         return
     }
     $stateDate = [string]$script:states[$tag].dateText
+    $script:agentAutoLast = Get-Date
     $allowed = Get-AgentActionList
     $notes = Get-AgentNotes $tag
     if (-not $notes) { $notes = '暂无长期笔记。' }
@@ -282,7 +286,8 @@ $allowed
         $newNotes = if ($data.notes) { [string]$data.notes } else { $notes }
         Set-AgentRecord $tag $newNotes @($orders)
         $script:agentAutoTag = $tag
-        $script:agentAutoDate = $stateDate
+        $script:agentAutoDate = [string]$script:states[$tag].dateText
+        $script:agentAutoLast = Get-Date
         $report = if ($data.report) { [string]$data.report } else { '已生成订单。' }
         try { Set-Clipboard -Value 'run dfy_orders.txt' -ErrorAction Stop } catch { [Windows.Forms.Clipboard]::SetText('run dfy_orders.txt') }
         $fileText = if ($files.Count) { ($files -join '；') } else { '未能写入文件' }
