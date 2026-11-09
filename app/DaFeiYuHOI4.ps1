@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '1.5.0'
+$script:appVersion = '1.6.0'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -383,6 +383,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 · 主界面本周计划卡：愿景/国策/三件事，托管后即时刷新；
 · 国策分支显示 x/y 列，按列/行排序；
 · A 支持“托管玩家一周”和“连续托管：开”；
+· 连续托管新周自动暂停/规划/恢复，冷却 3 秒，避免跳周；
 · 新增“本局愿景”：从聊天提炼长期目标，之后每周按愿景推进；
 · 50 条行动，10 个类别；高风险二次确认；
 · 记忆：摘要、承诺、最近行动；
@@ -395,7 +396,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 }
 
 function Read-Config {
-    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true; auto_agent = $true; auto_player = $false; local_plan = $true; templates_enabled = $false; token_day_cap = 200000 }
+    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true; auto_agent = $true; auto_player = $false; local_plan = $true; templates_enabled = $false; token_day_cap = 200000; auto_pause = $true; auto_cooldown = 3 }
     if (Test-Path -LiteralPath $ConfigFile) {
         try {
             $saved = Get-Content -LiteralPath $ConfigFile -Raw | ConvertFrom-Json
@@ -411,6 +412,8 @@ function Read-Config {
             if ($null -ne $saved.local_plan) { $cfg.local_plan = [bool]$saved.local_plan }
             if ($null -ne $saved.templates_enabled) { $cfg.templates_enabled = [bool]$saved.templates_enabled }
             if ($null -ne $saved.token_day_cap) { $cfg.token_day_cap = [int]$saved.token_day_cap }
+            if ($null -ne $saved.auto_pause) { $cfg.auto_pause = [bool]$saved.auto_pause }
+            if ($null -ne $saved.auto_cooldown) { $cfg.auto_cooldown = [int]$saved.auto_cooldown }
         } catch {}
     }
     return $cfg

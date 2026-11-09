@@ -309,7 +309,9 @@ function Invoke-AgentAutoTick {
     } else {
         if (-not $script:cfg.auto_agent) { return }
     }
-    if (((Get-Date) - $script:agentAutoLast).TotalSeconds -lt 25) { return }
+    $cooldown = [int]$script:cfg.auto_cooldown
+    if ($cooldown -le 0) { $cooldown = 3 }
+    if (((Get-Date) - $script:agentAutoLast).TotalSeconds -lt $cooldown) { return }
     if (-not $script:key) { return }
     $tag = Get-SelectedTag
     if (-not $tag -or -not $script:states.ContainsKey($tag)) { return }
@@ -325,11 +327,19 @@ function Invoke-AgentAutoTick {
     $script:agentAutoDate = $date
     $script:agentAutoLast = Get-Date
     $script:agentRunning = $true
+    $pausedByUs = $false
     try {
+        if ($script:cfg.auto_pause) {
+            Send-DfyTogglePause
+            $pausedByUs = $true
+        }
         Invoke-AgentWeek
     } catch {
         Add-SystemBubble ("自动托管失败：" + $_.Exception.Message) $UiRed
     } finally {
+        if ($pausedByUs) {
+            try { Send-DfyTogglePause } catch {}
+        }
         $script:agentRunning = $false
     }
 }
@@ -548,7 +558,7 @@ $templateList
         $briefText = (@($data.brief) | Where-Object { $_ } | Select-Object -First 3) -join "`r`n"
         Add-SystemBubble "$weekTitle：$report`r`n愿景：$goalShort`r`n$focusNote`r`n$templateNote`r`n本周三件事：`r`n$briefText`r`n订单 $($orders.Count) 条，已写入：$fileText`r`n$autoText $nextStep" $UiCyan
         try {
-            $line = "$(Get-Date -Format 's')`tweek`ttokens=$($result.Tokens)`tactions=$($orders.Count)`t$($commands -join ' || ')"
+            $line = "$(Get-Date -Format 's')`tweek`tdate=$stateDate`ttokens=$($result.Tokens)`tactions=$($orders.Count)`t$($commands -join ' || ')"
             Add-Content -LiteralPath $script:AgentLog -Value $line -Encoding UTF8
         } catch {}
         $lblStatus.Text = "$weekTitle：已生成 $($orders.Count) 条订单"

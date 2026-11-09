@@ -129,6 +129,15 @@ function Send-DfyScanKey([int]$scan) {
     if ([DfyInput40]::Key([int]$scan, 3) -ne 1) { throw 'SendInput 按键抬起失败。' }
 }
 
+function Send-DfyTogglePause {
+    Initialize-DfyInput
+    $h = Get-DfyHoi4Window
+    if ($h -eq [IntPtr]::Zero) { throw '没有找到 HOI4 窗口。' }
+    if (-not [DfyInput40]::Focus($h)) { throw '无法把 HOI4 切到前台。' }
+    Send-DfyScanKey 0x39
+    Start-Sleep -Milliseconds 350
+}
+
 function Send-DfyMouseClick([int]$x, [int]$y) {
     Initialize-DfyInput
     $h = Get-DfyHoi4Window
