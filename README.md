@@ -2,7 +2,7 @@
 
 让《钢铁雄心 4》里的 AI 国家真正“会说话”：你玩一个国家，DeepSeek 扮演另一个国家；它读取自己的工厂、师、船、飞机、战争和阵营状态，记住你说过的话，和你谈判、拒绝、提条件。
 
-**公开 Beta：v0.9.24**
+**公开 Beta：v0.9.25**
 
 > 这是独立项目，不依赖 NationMind。自己的配套 mod（`DFY|` 日志协议）+ 自己的外部 Windows 软件。
 >
@@ -58,7 +58,7 @@ eval_effect 国家 = { complete_national_focus = 焦点ID }
 - 写 `dfy_orders.txt`，复制 `run dfy_orders.txt`；
 - **不自动执行，不模拟键盘，不改聊天路径。**
 
-P0 需要一次人工验证 `run dfy_p0_test.txt`；见 `docs/P0_RUN_TEST.md`。
+P0 已验证：`run dfy_p0_test.txt` 让 GER 政治点 4.324→6.324（+2）；见 `docs/P0_RUN_TEST.md`。
 
 ## 行动方向（重要）
 
@@ -203,7 +203,7 @@ dafeiyu-hoi4/
 ## 发布
 
 - GitHub Release：https://github.com/QuanWander/dafeiyu-hoi4/releases
-- 资产：`DaFeiYuHOI4-v0.9.24.zip`、`SHA256SUMS.txt`
+- 资产：`DaFeiYuHOI4-v0.9.25.zip`、`SHA256SUMS.txt`
 - 发布说明：[RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ## License

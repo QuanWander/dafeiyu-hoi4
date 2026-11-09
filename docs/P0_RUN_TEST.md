@@ -1,40 +1,22 @@
 # P0：验证 `run <文件>`
 
-状态：**待一次人工实测**。不能模拟键盘，所以必须由玩家在游戏控制台执行一次。
+状态：**已验证通过（2026-11-09 21:53）**。
 
-## 文件
+## 实测证据
 
-已放到两处，内容相同：
-
-- `E:\SteamLibrary\steamapps\common\Hearts of Iron IV\dfy_p0_test.txt`
-- `D:\360MoveData\Users\26370\Documents\Paradox Interactive\Hearts of Iron IV\dfy_p0_test.txt`
-
-内容：
+`game.log`：
 
 ```text
-eval_effect GER = { add_political_power = 1 }
-eval_effect GER = { add_political_power = 1 }
-eval_effect GER = { dfy_log_state = yes }
+[21:53:19] DFY|state|tag=GER|...|pp=4.324|...
+[21:53:23] DFY|state|tag=GER|...|pp=6.324|...
 ```
 
-## 执行
+德国政治点 **4.324 → 6.324**，正好 +2；两条 `eval_effect` 都执行了，第三条 `dfy_log_state` 也写入了日志。
 
-1. 进入游戏，选任意存档；
-2. 按 `~` 打开控制台；
-3. 输入：
-   ```text
-   run dfy_p0_test.txt
-   ```
-4. 回车。
+注意：政治点是加在 **GER（德国，AI 国）**，不是玩家意大利。看玩家界面不会看到变化。
 
-## 通过标准
+## 结论
 
-- 德国政治点 +2；
-- `game.log` 出现一条 `DFY|state|tag=GER|...`。
-
-## 失败时
-
-- 换到游戏根目录再试一次；
-- 若两条 `eval_effect` 只执行一条，记录为“run 不支持多行”；
-- 若提示找不到文件，记录实际搜索目录；
-- P1 的“托管一周”仍能生成订单文件，但不能承诺一键执行。
+- 游戏根目录的 `dfy_p0_test.txt` 能被 `run` 找到；
+- 一次 `run` 可以执行多条 `eval_effect`；
+- `run` 可用，P1 可以用 `run dfy_orders.txt`。

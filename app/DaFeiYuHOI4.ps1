@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '0.9.24'
+$script:appVersion = '0.9.25'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -144,16 +144,13 @@ eval_effect ENG = { add_to_faction = GER }
 · 游戏根目录；
 · Documents\Paradox Interactive\Hearts of Iron IV。
 
-### P0 先验
+### P0 已验证
 
-先在游戏根目录放 dfy_p0_test.txt：
-eval_effect GER = { add_political_power = 1 }
-eval_effect GER = { add_political_power = 1 }
-eval_effect GER = { dfy_log_state = yes }
+2026-11-09 实测 `run dfy_p0_test.txt`：
+德国政治点 4.324 → 6.324（+2），game.log 出现 DFY|state|tag=GER。
+结论：run 可用，一次可执行多条 eval_effect。
 
-控制台执行 run dfy_p0_test.txt。
-政治点 +2、日志出现 DFY|state 才算 run 可用。
-如果没反应，P1 只能当“生成订单/剪贴板”用，不能承诺一键执行。
+注意：测试加的是 AI 国 GER 的政治点，不是玩家意大利。
 "@
     'AI 玩家模式' = @"
 ## AI 玩家模式
