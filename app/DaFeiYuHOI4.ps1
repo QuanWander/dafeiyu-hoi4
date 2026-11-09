@@ -7,7 +7,7 @@ $ConfigFile = Join-Path $AppData 'config.json'
 $MemoryFile = Join-Path $AppData 'memory.json'
 $ActionsFile = Join-Path $AppData 'actions.json'
 $AdvisorFile = Join-Path $AppData 'advisor.json'
-$script:appVersion = '1.2.0'
+$script:appVersion = '1.3.0'
 $DocsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Hearts of Iron IV'
 $LogPath = Join-Path $DocsRoot 'logs\game.log'
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
@@ -372,6 +372,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 · 新增自动托管：新周快照自动规划、写订单、切前台执行 run；
 · 修正 x64 INPUT 结构（32→40 字节），SendInput 可用；
 · 自动执行前要求 -debug_mode，且控制台关闭；
+· 本地规则规划：常规周 0 tokens，按状态/愿景/上一轮动作选国策和动作；
 · 自动失败回退 HID/手动；HID 为可选兜底；
 · 自动托管 25 秒冷却，避免高速跑周追 backlog；
 · 普通 AI 模式：她认为自己在玩这个国家，会主动配合、提计划、改国策方向；
@@ -391,7 +392,7 @@ A：她输出的 [FOCUS:...] 必须能在本国焦点树里找到；找不到就
 }
 
 function Read-Config {
-    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true; auto_agent = $true; auto_player = $false }
+    $cfg = @{ ai = 'ENG'; model = 'deepseek-chat'; help_seen = ''; player_override = ''; hid_port = ''; hid_auto = $true; input_auto = $true; auto_agent = $true; auto_player = $false; local_plan = $true }
     if (Test-Path -LiteralPath $ConfigFile) {
         try {
             $saved = Get-Content -LiteralPath $ConfigFile -Raw | ConvertFrom-Json
@@ -404,6 +405,7 @@ function Read-Config {
             if ($null -ne $saved.input_auto) { $cfg.input_auto = [bool]$saved.input_auto }
             if ($null -ne $saved.auto_agent) { $cfg.auto_agent = [bool]$saved.auto_agent }
             if ($null -ne $saved.auto_player) { $cfg.auto_player = [bool]$saved.auto_player }
+            if ($null -ne $saved.local_plan) { $cfg.local_plan = [bool]$saved.local_plan }
         } catch {}
     }
     return $cfg
@@ -1801,7 +1803,7 @@ function Show-Help([string]$section = '第一次使用') {
 function Show-Settings {
     $dialog = New-Object System.Windows.Forms.Form
     $dialog.Text = '设置'
-    $dialog.ClientSize = New-Object Drawing.Size(480, 300)
+    $dialog.ClientSize = New-Object Drawing.Size(480, 340)
     $dialog.StartPosition = 'CenterParent'
     $dialog.FormBorderStyle = 'FixedDialog'
     $dialog.MaximizeBox = $false
@@ -1857,9 +1859,17 @@ function Show-Settings {
     $note.Size = New-Object Drawing.Size(420, 20)
     $dialog.Controls.Add($note)
 
+    $localPlan = New-Object System.Windows.Forms.CheckBox
+    $localPlan.Text = '本地规则规划（常规周 0 tokens，不调模型）'
+    $localPlan.ForeColor = $UiText
+    $localPlan.Location = New-Object Drawing.Point(24, 214)
+    $localPlan.Size = New-Object Drawing.Size(420, 24)
+    $localPlan.Checked = [bool]$script:cfg.local_plan
+    $dialog.Controls.Add($localPlan)
+
     $test = New-Object System.Windows.Forms.Button
     $test.Text = '测试 Key'
-    $test.Location = New-Object Drawing.Point(24, 238)
+    $test.Location = New-Object Drawing.Point(24, 286)
     $test.Size = New-Object Drawing.Size(100, 32)
     $test.FlatStyle = 'Flat'
     $test.BackColor = $UiCard
@@ -1868,14 +1878,14 @@ function Show-Settings {
 
     $save = New-Object System.Windows.Forms.Button
     $save.Text = '保存'
-    $save.Location = New-Object Drawing.Point(264, 238)
+    $save.Location = New-Object Drawing.Point(264, 286)
     $save.Size = New-Object Drawing.Size(80, 32)
     $save.DialogResult = 'OK'
     $dialog.Controls.Add($save)
 
     $cancel = New-Object System.Windows.Forms.Button
     $cancel.Text = '取消'
-    $cancel.Location = New-Object Drawing.Point(364, 238)
+    $cancel.Location = New-Object Drawing.Point(364, 286)
     $cancel.Size = New-Object Drawing.Size(80, 32)
     $cancel.DialogResult = 'Cancel'
     $dialog.Controls.Add($cancel)
@@ -1897,6 +1907,7 @@ function Show-Settings {
     })
 
     if ($dialog.ShowDialog() -eq 'OK') {
+        $script:cfg.local_plan = [bool]$localPlan.Checked
         $newModel = $modelBox.Text.Trim()
         if ($newModel) { $script:cfg.model = $newModel }
         if ($keyBox.Text.Trim()) {

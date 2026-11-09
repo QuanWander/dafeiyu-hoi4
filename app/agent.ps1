@@ -38,11 +38,26 @@ function Get-AgentGoal([string]$tag) {
     return ''
 }
 
-function Set-AgentRecord([string]$tag, [string]$notes, $actions, [string]$goal = '') {
+function Get-AgentLastFocus([string]$tag) {
+    $store = Get-AgentStore
+    $key = Get-AgentKey $tag
+    if ($store.ContainsKey($key) -and $store[$key].focus) { return [string]$store[$key].focus }
+    return ''
+}
+
+function Get-AgentGoalFromChat([string]$tag) {
+    $history = @(Get-Memory $tag)
+    $lastUser = $history | Where-Object { $_.role -eq 'user' -and $_.content } | Select-Object -Last 1
+    if ($lastUser) { return ([string]$lastUser.content).Trim() }
+    return ''
+}
+
+function Set-AgentRecord([string]$tag, [string]$notes, $actions, [string]$goal = '', [string]$focus = '') {
     $store = Get-AgentStore
     $store[(Get-AgentKey $tag)] = [pscustomobject]@{
         notes = $notes
         goal = $goal
+        focus = $focus
         week = 0
         updated = (Get-Date).ToString('s')
         actions = @($actions)
@@ -74,6 +89,87 @@ function Get-AgentFocusList([string]$tag) {
     $rows = @()
     foreach ($c in $choices) { $rows += "- $($c.id) | $($c.name)" }
     return ($rows -join "`n")
+}
+
+function Get-LocalAgentPlan([string]$tag, [bool]$forPlayer, [string]$goal) {
+    $s = $script:states[$tag]
+    if (-not $s) { return $null }
+    if (-not $goal) { $goal = Get-AgentGoalFromChat $tag }
+    if (-not $goal) { $goal = '稳住建制，优先补国内短板' }
+    $lower = $goal.ToLowerInvariant()
+    $lastFocus = Get-AgentLastFocus $tag
+    $focusId = ''
+    $focusName = ''
+    $choices = @(Get-FocusChoices $tag)
+    if ($choices.Count -gt 0) {
+        $keywords = @()
+        if ($lower -match '海|navy|sea|地中海|制海|舰队') { $keywords += 'nav|sea|maritime|mediterranean|ship|fleet|海|地中海|舰队' }
+        if ($lower -match '工业|工厂|建造|经济|industry|factory') { $keywords += 'industr|construction|factory|infra|工业|建造|工厂' }
+        if ($lower -match '陆军|装甲|坦克|防守|军队|army|defen') { $keywords += 'army|infantry|armor|tank|defen|军事|陆军|装甲|防御' }
+        if ($lower -match '政治|稳定|支持|politic|stabil') { $keywords += 'politic|stabil|propaganda|政治|稳定' }
+        $best = $null
+        $bestScore = -1
+        foreach ($c in $choices) {
+            if ($c.id -eq $lastFocus) { continue }
+            $hay = "$($c.id) $($c.name) $($c.display)"
+            $score = 0
+            foreach ($kw in $keywords) { if ($hay -match $kw) { $score += 10 } }
+            if ($score -gt $bestScore) { $best = $c; $bestScore = $score }
+        }
+        if ($best) { $focusId = [string]$best.id; $focusName = [string]$best.name }
+    }
+
+    $actions = New-Object System.Collections.ArrayList
+    $seen = @{}
+    $recent = @(Get-AgentRecentActions $tag)
+    $add = {
+        param($id, $why)
+        if ($seen.ContainsKey($id)) { return }
+        if (-not $script:actionDefs.Contains($id)) { return }
+        if ($id -like 'invest_*' -and $recent -contains $id) { return }
+        $seen[$id] = $true
+        [void]$actions.Add([pscustomobject]@{ id = $id; target = ''; amount = $null; text = ''; reason = $why })
+    }
+    $pp = if ($s.pp) { [double]$s.pp } else { 0 }
+    $stab = if ($s.stab) { [double]$s.stab } else { 0 }
+    $ws = if ($s.ws) { [double]$s.ws } else { 0 }
+    if ($pp -lt 150) { & $add 'boost_pp' '政治点偏低，先保留决策空间' }
+    if ($stab -lt 0.6) { & $add 'boost_stability' '稳定度偏低，先压国内风险' }
+    if ($lower -match '海|navy|sea|地中海|制海|舰队') {
+        & $add 'navy_xp' '愿景是海权，先积累海军经验'
+        & $add 'invest_dock' '扩建船坞，支撑舰队'
+        & $add 'boost_fuel' '舰队出动需要燃料'
+    } elseif ($lower -match '工业|工厂|建造|经济|industry|factory') {
+        & $add 'invest_civ' '扩建民用工业'
+        & $add 'research' '补科研槽'
+    } elseif ($lower -match '陆军|装甲|坦克|防守|军队|army|defen') {
+        & $add 'army_xp' '陆军经验支撑编制与战术'
+        & $add 'invest_mil' '扩建军工'
+        & $add 'boost_manpower' '补充人力'
+    } else {
+        & $add 'invest_civ' '先补经济基础'
+        & $add 'boost_pp' '保留政治点'
+    }
+    if ($ws -lt 0.5 -and $s.war -eq '1') { & $add 'boost_war_support' '战争支持度低，先稳动员' }
+    if ($actions.Count -eq 0) { & $add 'invest_civ' '无更优动作时补经济' }
+
+    $brief = @()
+    if ($focusName) { $brief += "国策优先：$focusName" }
+    foreach ($a in $actions) {
+        if ($brief.Count -ge 3) { break }
+        $brief += "$($script:actionDefs[$a.id].Name)：$($a.reason)"
+    }
+    $actionCount = $actions.Count
+    $report = if ($focusName) { "本地规划：$focusName + $actionCount 项" } else { "本地规划：$actionCount 项" }
+    $notes = "本局愿景：$goal`n本周重点：$($brief -join '；')"
+    return [pscustomobject]@{
+        report = $report
+        goal = $goal
+        brief = @($brief)
+        focus = $focusId
+        notes = $notes
+        actions = @($actions)
+    }
 }
 
 function Get-AgentActionList([bool]$forPlayer = $false) {
@@ -253,11 +349,18 @@ $focusList
     $lblStatus.Text = "$weekTitle：正在规划..."
     [Windows.Forms.Application]::DoEvents()
     try {
-        $result = Invoke-ChatApi $messages 900
-        $script:tokens += $result.Tokens
-        $match = [regex]::Match([string]$result.Reply, '(?s)\{.*\}')
-        if (-not $match.Success) { throw '规划结果不是 JSON。' }
-        $data = $match.Value | ConvertFrom-Json
+        if ($script:cfg.local_plan) {
+            $data = Get-LocalAgentPlan $tag $forPlayer $goal
+            if (-not $data) { throw '本地规划没有可用状态。' }
+            $result = @{ Tokens = 0 }
+            $lblStatus.Text = "$weekTitle：本地规则规划（0 tokens）"
+        } else {
+            $result = Invoke-ChatApi $messages 900
+            $script:tokens += $result.Tokens
+            $match = [regex]::Match([string]$result.Reply, '(?s)\{.*\}')
+            if (-not $match.Success) { throw '规划结果不是 JSON。' }
+            $data = $match.Value | ConvertFrom-Json
+        }
         $orders = New-Object System.Collections.ArrayList
         $seen = @{}
         $focusNote = ''

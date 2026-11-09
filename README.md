@@ -6,7 +6,7 @@
 
 独立项目，不依赖 NationMind。
 
-**v1.2.0** · Windows 10/11 · PowerShell 5.1 + WinForms + 配套 mod
+**v1.3.0** · Windows 10/11 · PowerShell 5.1 + WinForms + 配套 mod
 
 ![主界面](docs/screenshot.png)
 
@@ -39,6 +39,16 @@
 - 每次规划会从最近聊天提炼 **本局愿景**，之后每周按愿景推进；你在聊天里提出新目标会更新；
 - 愿景匹配时，会从真实焦点树选一个国策，生成 `complete_national_focus`，不再只给通用加成；
 - 气泡输出“愿景 / 本周国策 / 本周三件事”，减少信息过载。
+
+### 本地规则规划（省钱）
+
+设置里默认开启：
+
+- 常规周不调用 DeepSeek；
+- 按国家状态 + 聊天愿景 + 上一轮动作，本地选国策/投资/补短板；
+- 订单仍然是真实 `complete_national_focus` / effect；
+- 0 tokens；
+- 需要模型判断复杂局势时，可在设置里关掉。
 
 ### 50 条行动
 
